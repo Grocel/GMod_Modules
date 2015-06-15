@@ -5,8 +5,10 @@
 *.pydevproject
 .project
 .metadata
+.svn/
 lib/
 tmp/
+sourcesdk2013/
 *.tmp
 *.bak
 *.swp
@@ -15,6 +17,7 @@ local.properties
 .classpath
 .settings/
 .loadpath
+working
 
 # External tool builders
 .externalToolBuilders/
