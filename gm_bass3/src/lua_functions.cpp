@@ -154,9 +154,22 @@ namespace LUAFUNC
 				pChannel = NULL;
 			}
 
-			if((pChannel != NULL) && !bNoPlay)
+			if(pChannel != NULL)
 			{
-				pChannel->Play(true);
+				if(g_CLIENT)
+				{
+					pChannel->SetVolume(1);
+				}
+				else
+				{
+					// Mute on servers
+					pChannel->SetVolume(0);
+				}
+
+				if(!bNoPlay)
+				{
+					pChannel->Play(true);
+				}
 			}
 
 			if(!iCallbackRef)
@@ -629,7 +642,7 @@ namespace LUAFUNC
 
 				bass_flag iFlag = BASS_NULL;
 				unsigned int iCount = 0;
-				unsigned int iSkipCount = 1;
+				unsigned int iSkip = 1;
 				unsigned int iLuaFlag = (unsigned int)LUA->GetNumber(3);
 
 				switch (iLuaFlag)
@@ -642,10 +655,10 @@ namespace LUAFUNC
 					case LUAENUM_FFT_8192: iFlag = BASS_DATA_FFT8192; iCount = 4096; break;
 					case LUAENUM_FFT_16384: iFlag = BASS_DATA_FFT16384; iCount = 8192; break;
 
-					case LUAENUM_FFT_128: iFlag = BASS_DATA_FFT256; iCount = 128; iSkipCount = 2; break;
-					case LUAENUM_FFT_64: iFlag = BASS_DATA_FFT256; iCount = 128; iSkipCount = 4; break;
-					case LUAENUM_FFT_32: iFlag = BASS_DATA_FFT256; iCount = 128; iSkipCount = 8; break;
-					case LUAENUM_FFT_16: iFlag = BASS_DATA_FFT256; iCount = 128; iSkipCount = 16; break;
+					case LUAENUM_FFT_128: iFlag = BASS_DATA_FFT256; iCount = 128; iSkip = 2; break;
+					case LUAENUM_FFT_64: iFlag = BASS_DATA_FFT256; iCount = 128; iSkip = 4; break;
+					case LUAENUM_FFT_32: iFlag = BASS_DATA_FFT256; iCount = 128; iSkip = 8; break;
+					case LUAENUM_FFT_16: iFlag = BASS_DATA_FFT256; iCount = 128; iSkip = 16; break;
 
 					default: LUA->PushNumber(0); return 1;
 				}
@@ -663,7 +676,7 @@ namespace LUAFUNC
 				LUA->ReferencePush( iTableRef );
 				if(!pChannel->FFT(iFlag, g_pfFFTBuffer))
 				{
-					for (i = 0; i < iCount; i += iSkipCount)
+					for (i = 0; i < iCount; i += iSkip)
 					{
 						LUA->PushNumber( iIndex ); 
 						LUA->PushNumber( 0 );
@@ -674,7 +687,7 @@ namespace LUAFUNC
 				}
 				else
 				{
-					for (i = 0; i < iCount; i += iSkipCount)
+					for (i = 0; i < iCount; i += iSkip)
 					{
 						fTmp = g_pfFFTBuffer[i];
 						if(fTmp < 0) fTmp = 0;
@@ -689,7 +702,7 @@ namespace LUAFUNC
 				}
 				LUA->Pop();
 
-				LUA->PushNumber(iIndex);
+				LUA->PushNumber(iIndex-1);
 				LUA->ReferenceFree(iTableRef);
 
 				return 1;
@@ -722,23 +735,23 @@ namespace LUAFUNC
 
 				bass_flag iFlag = BASS_NULL;
 				unsigned int iCount = 0;
-				unsigned int iSkipCount = 1;
+				unsigned int iSkip = 2;
 				unsigned int iLuaFlag = (unsigned int)LUA->GetNumber(3);
 
 				switch (iLuaFlag)
 				{
-					case LUAENUM_FFT_256: iFlag = BASS_DATA_FFT256; iCount = 256; break;
-					case LUAENUM_FFT_512: iFlag = BASS_DATA_FFT512; iCount = 512; break;
-					case LUAENUM_FFT_1024: iFlag = BASS_DATA_FFT1024; iCount = 1024; break;
-					case LUAENUM_FFT_2048: iFlag = BASS_DATA_FFT2048; iCount = 2048; break;
-					case LUAENUM_FFT_4096: iFlag = BASS_DATA_FFT4096; iCount = 4096; break;
-					case LUAENUM_FFT_8192: iFlag = BASS_DATA_FFT8192; iCount = 8192; break;
-					case LUAENUM_FFT_16384: iFlag = BASS_DATA_FFT16384; iCount = 16384; break;
+					case LUAENUM_FFT_256: iFlag = BASS_DATA_FFT256; iCount = 512; break;
+					case LUAENUM_FFT_512: iFlag = BASS_DATA_FFT512; iCount = 1024; break;
+					case LUAENUM_FFT_1024: iFlag = BASS_DATA_FFT1024; iCount = 2048; break;
+					case LUAENUM_FFT_2048: iFlag = BASS_DATA_FFT2048; iCount = 4096; break;
+					case LUAENUM_FFT_4096: iFlag = BASS_DATA_FFT4096; iCount = 8192; break;
+					case LUAENUM_FFT_8192: iFlag = BASS_DATA_FFT8192; iCount = 16384; break;
+					case LUAENUM_FFT_16384: iFlag = BASS_DATA_FFT16384; iCount = 32768; break;
 
-					case LUAENUM_FFT_128: iFlag = BASS_DATA_FFT256; iCount = 256; iSkipCount = 2; break;
-					case LUAENUM_FFT_64: iFlag = BASS_DATA_FFT256; iCount = 256; iSkipCount = 4; break;
-					case LUAENUM_FFT_32: iFlag = BASS_DATA_FFT256; iCount = 256; iSkipCount = 8; break;
-					case LUAENUM_FFT_16: iFlag = BASS_DATA_FFT256; iCount = 256; iSkipCount = 16; break;
+					case LUAENUM_FFT_128: iFlag = BASS_DATA_FFT256; iCount = 512; iSkip = 4; break;
+					case LUAENUM_FFT_64: iFlag = BASS_DATA_FFT256; iCount = 512; iSkip = 8; break;
+					case LUAENUM_FFT_32: iFlag = BASS_DATA_FFT256; iCount = 512; iSkip = 16; break;
+					case LUAENUM_FFT_16: iFlag = BASS_DATA_FFT256; iCount = 512; iSkip = 32; break;
 
 					default: LUA->PushNumber(0); return 1;
 				}
@@ -754,9 +767,9 @@ namespace LUAFUNC
 				if(bRemoveHannWindow) iFlag |= BASS_DATA_FFT_NOWINDOW;
 
 				LUA->ReferencePush( iTableRef );
-				if(!pChannel->FFT(iFlag, g_pfFFTBuffer))
+				if(!pChannel->FFT(iFlag | BASS_DATA_FFT_COMPLEX, g_pfFFTBuffer))
 				{
-					for (i = 0; i < iCount; i += iSkipCount)
+					for (i = 0; i < iCount; i += iSkip)
 					{
 						LUA->PushNumber( iIndex ); 
 						LUA->PushNumber( 0 );
@@ -773,8 +786,9 @@ namespace LUAFUNC
 				}
 				else
 				{
-					for (i = 0; i < iCount; i += iSkipCount)
+					for (i = 0; i < iCount; i += iSkip)
 					{
+						// Real Part 
 						fTmp = g_pfFFTBuffer[i];
 						if(fTmp < -1) fTmp = -1;
 						if(fTmp > 1) fTmp = 1;
@@ -785,6 +799,7 @@ namespace LUAFUNC
 
 						iIndex++;
 
+						// Imaginary Part 
 						fTmp = g_pfFFTBuffer[i+1];
 						if(fTmp < -1) fTmp = -1;
 						if(fTmp > 1) fTmp = 1;
@@ -798,7 +813,7 @@ namespace LUAFUNC
 				}
 				LUA->Pop();
 
-				LUA->PushNumber(iIndex);
+				LUA->PushNumber(iIndex-1);
 				LUA->ReferenceFree(iTableRef);
 				return 1;
 			}
