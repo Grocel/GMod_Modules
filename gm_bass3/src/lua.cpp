@@ -222,17 +222,6 @@ namespace LUAINTERFACE
 
 			ADDMETHOD(IBASS3Channel, GetState);
 
-			ADDMETHOD(IBASS3Channel, SetVolume);
-			ADDMETHOD(IBASS3Channel, GetVolume);
-			ADDMETHOD(IBASS3Channel, VolumeFadeTo);
-			ADDMETHOD(IBASS3Channel, VolumeIsFading);
-
-			ADDMETHOD(IBASS3Channel, SetBalance);
-			ADDMETHOD(IBASS3Channel, GetBalance);
-			ADDMETHOD(IBASS3Channel, BalanceFadeTo);
-			ADDMETHOD(IBASS3Channel, BalanceIsFading);
-
-			ADDMETHOD(IBASS3Channel, Is3D);
 			ADDMETHOD(IBASS3Channel, IsLooping);
 			ADDMETHOD(IBASS3Channel, IsOnline);
 			ADDMETHOD(IBASS3Channel, IsBlockStreamed);
@@ -257,14 +246,29 @@ namespace LUAINTERFACE
 			ADDMETHOD(IBASS3Channel, GetSamplingRate);
 			ADDMETHOD(IBASS3Channel, GetBitsPerSample);
 
-			ADDMETHOD(IBASS3Channel, GetPos);
-			ADDMETHOD(IBASS3Channel, SetPos);
+			if(g_CLIENT)
+			{
+				ADDMETHOD(IBASS3Channel, SetVolume);
+				ADDMETHOD(IBASS3Channel, GetVolume);
+				ADDMETHOD(IBASS3Channel, VolumeFadeTo);
+				ADDMETHOD(IBASS3Channel, VolumeIsFading);
 
-			ADDMETHOD(IBASS3Channel, Get3DFadeDistance);
-			ADDMETHOD(IBASS3Channel, Set3DFadeDistance);
+				ADDMETHOD(IBASS3Channel, SetBalance);
+				ADDMETHOD(IBASS3Channel, GetBalance);
+				ADDMETHOD(IBASS3Channel, BalanceFadeTo);
+				ADDMETHOD(IBASS3Channel, BalanceIsFading);
+			
+				ADDMETHOD(IBASS3Channel, Is3D);
 
-			ADDMETHOD(IBASS3Channel, Get3DCone);
-			ADDMETHOD(IBASS3Channel, Set3DCone);
+				ADDMETHOD(IBASS3Channel, GetPos);
+				ADDMETHOD(IBASS3Channel, SetPos);
+
+				ADDMETHOD(IBASS3Channel, Get3DFadeDistance);
+				ADDMETHOD(IBASS3Channel, Set3DFadeDistance);
+
+				ADDMETHOD(IBASS3Channel, Get3DCone);
+				ADDMETHOD(IBASS3Channel, Set3DCone);
+			}
 		iTabChannelRef = LUA->ReferenceCreate();
 
 		// Add IBASS3Channel to _R
