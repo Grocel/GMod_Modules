@@ -8,8 +8,8 @@
 #define ADDENUM(name) LUA->PushNumber( LUAENUM_ ## name ); LUA->SetField( -2, #name )
 #define ADDBASSENUM(name) LUA->PushNumber( BASS_ ## name ); LUA->SetField( -2, #name )
 
-#define CREATEVECTOR(x, y, z) LUA->PushSpecial(SPECIAL_GLOB); LUA->GetField(-1, "Vector"); LUA->PushNumber(x); LUA->PushNumber(y); LUA->PushNumber(z); LUA->Call(3, 1)
-
+//#define CREATEVECTOR(x, y, z) LUA->PushSpecial(SPECIAL_GLOB); LUA->GetField(-1, "Vector"); LUA->PushNumber(x); LUA->PushNumber(y); LUA->PushNumber(z); LUA->Call(3, 1)
+#define CREATEVECTOR(x, y, z) LUA->ReferencePush(g_VectorFuncRef); LUA->PushNumber(x); LUA->PushNumber(y); LUA->PushNumber(z); LUA->Call(3, 1); LUA->Push(-1);
 
 using namespace GarrysMod::Lua;
 using namespace LUAFUNC;
@@ -68,6 +68,12 @@ namespace LUAINTERFACE
 			LUA->GetField(-1, "CLIENT");
 			g_CLIENT = LUA->GetBool(-1);
 		LUA->Pop();
+
+		LUA->PushSpecial(SPECIAL_GLOB);
+			LUA->GetField(-1, "Vector");
+			g_VectorFuncRef = LUA->ReferenceCreate();
+		LUA->Pop();
+
 	}
 
 	void SetupBASSTable(lua_State* state)
@@ -288,5 +294,6 @@ namespace LUAINTERFACE
 	void UnrefGlobalReferences(lua_State* state)
 	{
 		LUA->ReferenceFree(g_ChannelRef);
+		LUA->ReferenceFree(g_VectorFuncRef);
 	}
 }

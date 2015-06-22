@@ -6,6 +6,7 @@
 #include "bassfilesys.h"
 #include "util.h"
 
+#include "tier2/tier2.h"
 #include "tier1/interface.h"
 #include "filesystem.h"
 
@@ -79,6 +80,7 @@ namespace BASSFILESYS
 	bool Init()
 	{
 		if(g_pFileSystem != NULL) return true;
+		//ConnectTier2Libraries( CreateInterfaceFn *pFactoryList, 1 )
 
 		CSysModule* FileSystemFactoryDLL = NULL;
 		if (Sys_LoadInterface(FILESYSTEM_LIB, FILESYSTEM_INTERFACE_VERSION_GMOD, &FileSystemFactoryDLL, (void**)&g_pFileSystem))
@@ -88,7 +90,7 @@ namespace BASSFILESYS
 				g_pFileSystem->Connect(Sys_GetFactoryThis());
 				g_pFileSystem->Init();
 
-				g_pFileSystem->AddSearchPath( "garrysmod", "MOD" );
+				g_pFileSystem->AddSearchPath( "garrysmod", "GAME" );
 				//g_pFileSystem->PrintSearchPaths();
 
 				return true;

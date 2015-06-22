@@ -1177,21 +1177,23 @@ namespace LUAFUNC
 
 				pChannel->GetPos(&vBassPos, &vBassDir, &vBassVel);
 
-				int iRef = 0;
+				//int iRef = 0;
 
 				if(!ISNIL(2)) // Allow recycling
 				{
 					LUA->CheckType(2, Type::VECTOR);
 
 					Vector* pvPos = GETVECTOR(2);
-					pvPos->Init(vBassPos.x, -vBassPos.y, vBassPos.z);
+					pvPos->x = vBassPos.x;
+					pvPos->y = -vBassPos.y;
+					pvPos->z = vBassPos.z;
 
 					LUA->Push(2);
-					iRef = LUA->ReferenceCreate();
-					LUA->Pop();
+					//iRef = LUA->ReferenceCreate();
+					//LUA->Pop();
 
-					LUA->ReferencePush(iRef);
-					LUA->ReferenceFree(iRef);
+					//LUA->ReferencePush(iRef);
+					//LUA->ReferenceFree(iRef);
 				}
 				else
 				{
@@ -1203,14 +1205,16 @@ namespace LUAFUNC
 					LUA->CheckType(3, Type::VECTOR);
 
 					Vector* pvDir = GETVECTOR(3);
-					pvDir->Init(vBassDir.x, -vBassDir.y, vBassDir.z);
+					pvDir->x = vBassDir.x;
+					pvDir->y = -vBassDir.y;
+					pvDir->z = vBassDir.z;
 
 					LUA->Push(3);
-					iRef = LUA->ReferenceCreate();
-					LUA->Pop();
+					//iRef = LUA->ReferenceCreate();
+					//LUA->Pop();
 
-					LUA->ReferencePush(iRef);
-					LUA->ReferenceFree(iRef);
+					//LUA->ReferencePush(iRef);
+					//LUA->ReferenceFree(iRef);
 				}
 				else
 				{
@@ -1222,14 +1226,16 @@ namespace LUAFUNC
 					LUA->CheckType(4, Type::VECTOR);
 
 					Vector* pvVel = GETVECTOR(4);
-					pvVel->Init(vBassVel.x, -vBassVel.y, vBassVel.z);
+					pvVel->x = vBassVel.x;
+					pvVel->y = -vBassVel.y;
+					pvVel->z = vBassVel.z;
 
 					LUA->Push(4);
-					iRef = LUA->ReferenceCreate();
-					LUA->Pop();
+					//iRef = LUA->ReferenceCreate();
+					//LUA->Pop();
 
-					LUA->ReferencePush(iRef);
-					LUA->ReferenceFree(iRef);
+					//LUA->ReferencePush(iRef);
+					//LUA->ReferenceFree(iRef);
 				}
 				else
 				{

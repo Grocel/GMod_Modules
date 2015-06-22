@@ -69,7 +69,7 @@ extern bool g_SELFLOADED;
 extern bool g_CLOSING;
 extern bool g_IntialTickHappend;
 extern int g_ChannelRef;
-extern int g_VectorRef;
+extern int g_VectorFuncRef;
 
 extern thread* g_thCleanUp;
 extern SyncList<TChannelCallbackData *>* g_pListPendingCallbacks;
