@@ -183,11 +183,23 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 
 
 ## Lua examples
-(todo)
+These examples should help you to understand how to use gm_bass3.
+
+#### Loading the module
+```lua
+require("gm_bass3")
+
+-- Let's see what version we have got.
+print("BASS3 Version ", BASS3.Version)
+print("GM_BASS3 Version ", BASS3.ModuleVersion)
+```
+
+
 #### Creating a channel from a radio stream.
 ```lua
+if g_channel then g_channel = g_channel:Remove() end
+
 local url = "http://pub1.di.fm:80/di_epictrance"
-local channel = nil
 
 -- String flags
 -- BASS3.PlayURL(url, "mono noblock", function(ch, err, errtxt)
@@ -196,26 +208,26 @@ local channel = nil
 BASS3.PlayURL(url, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_NOBLOCK), function(ch, err, errtxt)
 	print("BASS3.PlayURL callback", ch, err, errtxt)
 
-	-- Stop the old one.
-	if channel then ch:Stop() end
+	-- Remove the old one.
+	if g_channel then g_channel:Remove() end
 	
 	-- don't let it go out of scope!
-	channel = ch
+	g_channel = ch
 	
-	if channel and CLIENT then
-		channel:SetBalance(-1) -- start on the left speaker.
-		print(channel:BalanceIsFading()) -- "false"
+	if g_channel and CLIENT then
+		g_channel:SetBalance(-1) -- start on the left speaker.
+		print(g_channel:BalanceIsFading()) -- "false"
 		
-		channel:BalanceFadeTo(0, 10) -- slowly move to the center for 10 secounds.
-		print(channel:BalanceIsFading()) -- "true" for the next 10 secounds.
+		g_channel:BalanceFadeTo(0, 10) -- slowly move to the center for 10 secounds.
+		print(g_channel:BalanceIsFading()) -- "true" for the next 10 secounds.
 	end
 end)
 ```
 
 #### Creating a channel from a local file.
 ```lua
-local path = "sound/music/"
-local channel = nil
+if g_channel then g_channel = g_channel:Remove() end
+local path = "sound/music/hl1_song10.mp3"
 
 -- String flags
 -- BASS3.PlayFile(path, "mono noblock noplay", function(ch, err, errtxt)
@@ -224,22 +236,22 @@ local channel = nil
 BASS3.PlayFile(path, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_NOBLOCK, BASS3.ENUM.MODE_NOPLAY), function(ch, err, errtxt)
 	print("BASS3.PlayFile callback", ch, err, errtxt)
 
-	-- Stop the old one.
-	if channel then ch:Stop() end
+	-- Remove the old one.
+	if g_channel then g_channel:Remove() end
 	
 	-- don't let it go out of scope!
-	channel = ch
+	g_channel = ch
 	
-	if channel then
+	if g_channel then
 		if CLIENT then
-			channel:SetVolume(0) -- start muted
-			print(channel:VolumeIsFading()) -- "false"
+			g_channel:SetVolume(0) -- start muted
+			print(g_channel:VolumeIsFading()) -- "false"
 			
-			channel:VolumeFadeTo(1, 2) -- slowly increase the volume to 1 for 2 secounds.
-			print(channel:VolumeIsFading()) -- "true" for the next 2 secounds.
+			g_channel:VolumeFadeTo(1, 2) -- slowly increase the volume to 1 for 2 secounds.
+			print(g_channel:VolumeIsFading()) -- "true" for the next 2 secounds.
 		end
 		
-		channel:Play()
+		g_channel:Play()
 	end
 end)
 ```
@@ -267,8 +279,8 @@ local function printfft(ch)
 	PrintTable(fft)
 end
 
--- A valid and playing 'channel' has to be created before.
-printfft(channel)
+-- A valid and playing 'g_channel' has to be created before.
+printfft(g_channel)
 ```
 
 #### Setting and Getting the 3D Position
@@ -276,8 +288,9 @@ printfft(channel)
 #### Printing the FFT values.
 
 ```lua
+if g_channel then g_channel = g_channel:Remove() end
+
 local url = "http://pub1.di.fm:80/di_epictrance"
-local channel = nil
 local pos, dir = Vector(), Vector()
 
 -- String flags
@@ -287,24 +300,24 @@ local pos, dir = Vector(), Vector()
 BASS3.PlayURL(url, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_3D), function(ch, err, errtxt)
 	print("BASS3.PlayURL callback", ch, err, errtxt)
 
-	-- Stop the old one.
-	if channel then ch:Stop() end
+	-- Remove the old one.
+	if g_channel then g_channel:Remove() end
 	
 	-- don't let it go out of scope!
-	channel = ch
+	g_channel = ch
 
 	-- Set the Position and make the sound emit upwardly.
-	channel:SetPos(Vector(124,241,235), Vector(0,0,1))
+	g_channel:SetPos(Vector(124,241,235), Vector(0,0,1))
 
 	-- Recycled
-	local pos1, dir1 = channel:GetPos(pos, dir)
+	local pos1, dir1 = g_channel:GetPos(pos, dir)
 	print(pos, dir) -- Prints "124.0000 241.0000 235.0000    0.0000 0.0000 1.0000"
 	
 	-- pos1, dir1 are leading to the same vector as pos, dir
 	print(pos1, dir2) -- Prints "124.0000 241.0000 235.0000    0.0000 0.0000 1.0000"
 
 	-- Not Recycled
-	local pos2, dir2 = channel:GetPos()
+	local pos2, dir2 = g_channel:GetPos()
 	print(pos2, dir2) -- Also prints "124.0000 241.0000 235.0000    0.0000 0.0000 1.0000", but these are new vectors.
 end)
 ```
