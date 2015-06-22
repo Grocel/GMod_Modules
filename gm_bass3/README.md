@@ -170,7 +170,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:Play()              | ``bool Restart = false``                 | ``nil``                  | Plays the channel.<br>Restarts it if the given bool is true. |
 | IBASS3Channel:Remove()            | ``nil``                                  | ``nil``                  | Stops the channel and frees it. |
 | IBASS3Channel:Set3DCone()         | ``float InnerAngle = -1``<br><br>``float OuterAngle = -1``<br><br>``float OuterVolume = -1`` | ``nil`` | **Clientside**<br><br>Sets 3D cone of the sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
-| IBASS3Channel:Set3DFadeDistance() | ``float Min = -1``<br><br>``float Max = -1``       | ``nil``                  | **Clientside**<br><br>Sets 3D fade distances of a sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
+| IBASS3Channel:Set3DFadeDistance() | ``float Min = -1``<br><br>``float Max = -1``       | ``nil``        | **Clientside**<br><br>Sets 3D fade distances of a sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
 | IBASS3Channel:SetBalance()        | ``float Balance``                        | ``nil``                  | **Clientside**<br><br>Set the sound balance to the given value.<br><br>Balance values:<br>-1 = Left<br>0 = Center<br>1 = Right |
 | IBASS3Channel:SetPos()            | ``Vector Position = Vector(0,0,0)``<br><br>``Vector Direction = Vector(0,0,0)``<br><br>``Vector Velocity = Vector(0,0,0)`` | ``nil`` | **Clientside**<br><br>Sets the position, direction and velocity of sound channel in case the channel has a 3d option set. |
 | IBASS3Channel:SetTime()           | ``float TimePos``                        | ``nil``                  | Set the time position to the given value.<br><br>It seeks to the position, so the position not set immediately. |
@@ -185,10 +185,126 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 ## Lua examples
 (todo)
 #### Creating a channel from a radio stream.
+```lua
+local url = "http://pub1.di.fm:80/di_epictrance"
+local channel = nil
+
+-- String flags
+-- BASS3.PlayURL(url, "mono noblock", function(ch, err, errtxt)
+
+-- Enum flags, recommend
+BASS3.PlayURL(url, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_NOBLOCK), function(ch, err, errtxt)
+	print("BASS3.PlayURL callback", ch, err, errtxt)
+
+	-- Stop the old one.
+	if channel then ch:Stop() end
+	
+	-- don't let it go out of scope!
+	channel = ch
+	
+	if channel and CLIENT then
+		channel:SetBalance(-1) -- start on the left speaker.
+		print(channel:BalanceIsFading()) -- "false"
+		
+		channel:BalanceFadeTo(0, 10) -- slowly move to the center for 10 secounds.
+		print(channel:BalanceIsFading()) -- "true" for the next 10 secounds.
+	end
+end)
+```
 
 #### Creating a channel from a local file.
+```lua
+local path = "sound/music/"
+local channel = nil
+
+-- String flags
+-- BASS3.PlayFile(path, "mono noblock noplay", function(ch, err, errtxt)
+
+-- Enum flags, recommend
+BASS3.PlayFile(path, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_NOBLOCK, BASS3.ENUM.MODE_NOPLAY), function(ch, err, errtxt)
+	print("BASS3.PlayFile callback", ch, err, errtxt)
+
+	-- Stop the old one.
+	if channel then ch:Stop() end
+	
+	-- don't let it go out of scope!
+	channel = ch
+	
+	if channel then
+		if CLIENT then
+			channel:SetVolume(0) -- start muted
+			print(channel:VolumeIsFading()) -- "false"
+			
+			channel:VolumeFadeTo(1, 2) -- slowly increase the volume to 1 for 2 secounds.
+			print(channel:VolumeIsFading()) -- "true" for the next 2 secounds.
+		end
+		
+		channel:Play()
+	end
+end)
+```
 
 #### Printing the FFT values.
+```lua
+local fft = {}
+
+local function printfft(ch)
+	-- Is 'ch' valid?
+	if !IsValid(ch) then return end
+	
+	-- Get the spectrum and print the count
+	print("count: ", ch:FFT(fft, BASS3.ENUM.FFT_16))
+
+	-- Print the spectrum values
+	print("spectrum values: ")
+	PrintTable(fft)
+	
+	-- Get the complex spectrum and print the count
+	print("count: ", ch:FFTComplex(fft, BASS3.ENUM.FFT_16))
+
+	-- Print the complex spectrum values
+	print("complex spectrum values: ")
+	PrintTable(fft)
+end
+
+-- A valid and playing 'channel' has to be created before.
+printfft(channel)
+```
 
 #### Setting and Getting the 3D Position
 
+#### Printing the FFT values.
+
+```lua
+local url = "http://pub1.di.fm:80/di_epictrance"
+local channel = nil
+local pos, dir = Vector(), Vector()
+
+-- String flags
+-- BASS3.PlayURL(url, "mono 3d", function(ch, err, errtxt)
+
+-- Enum flags, recommend
+BASS3.PlayURL(url, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_3D), function(ch, err, errtxt)
+	print("BASS3.PlayURL callback", ch, err, errtxt)
+
+	-- Stop the old one.
+	if channel then ch:Stop() end
+	
+	-- don't let it go out of scope!
+	channel = ch
+
+	-- Set the Position and make the sound emit upwardly.
+	channel:SetPos(Vector(124,241,235), Vector(0,0,1))
+
+	-- Recycled
+	local pos1, dir1 = channel:GetPos(pos, dir)
+	print(pos, dir) -- Prints "124.0000 241.0000 235.0000    0.0000 0.0000 1.0000"
+	
+	-- pos1, dir1 are leading to the same vector as pos, dir
+	print(pos1, dir2) -- Prints "124.0000 241.0000 235.0000    0.0000 0.0000 1.0000"
+
+	-- Not Recycled
+	local pos2, dir2 = channel:GetPos()
+	print(pos2, dir2) -- Also prints "124.0000 241.0000 235.0000    0.0000 0.0000 1.0000", but these are new vectors.
+end)
+```
