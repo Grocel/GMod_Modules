@@ -267,8 +267,8 @@ namespace LUAFUNC
 
 			LUA_FUNCTION(DecodeError)
 			{
-				LUA->CheckType(2, Type::NUMBER);
-				LUA->PushString(UTIL::DecodeBassError((int)LUA->GetNumber(2)));
+				LUA->CheckType(1, Type::NUMBER);
+				LUA->PushString(UTIL::DecodeBassError((int)LUA->GetNumber(1)));
 				return 1;
 			}
 		}
@@ -341,7 +341,7 @@ namespace LUAFUNC
 				return 1;
 			}
 
-			LUA_FUNCTION(StreamFile)
+			LUA_FUNCTION(PlayFile)
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				LUA->CheckType(2, Type::STRING);
@@ -380,7 +380,7 @@ namespace LUAFUNC
 				return 1;
 			}
 
-			LUA_FUNCTION(StreamURL)
+			LUA_FUNCTION(PlayURL)
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				LUA->CheckType(2, Type::STRING);

@@ -23,10 +23,10 @@ using namespace GarrysMod::Lua;
 #define LUAENUM_FFT_16384 6
 
 // Custom FFT modes 
-#define LUAENUM_FFT_128 7
-#define LUAENUM_FFT_64 8
-#define LUAENUM_FFT_32 9
 #define LUAENUM_FFT_16 10
+#define LUAENUM_FFT_32 11
+#define LUAENUM_FFT_64 12
+#define LUAENUM_FFT_128 13
 
 // Play modes
 #define LUAENUM_MODE_NONE 0x00
@@ -72,8 +72,8 @@ namespace LUAFUNC
 			LUA_FUNCTION(Remove);
 			LUA_FUNCTION(IsValid);
 
-			LUA_FUNCTION(StreamFile);
-			LUA_FUNCTION(StreamURL);
+			LUA_FUNCTION(PlayFile);
+			LUA_FUNCTION(PlayURL);
 
 			LUA_FUNCTION(Play);
 			LUA_FUNCTION(Stop);

@@ -180,7 +180,7 @@ namespace UTIL
 			ENUM_TO_VALUE(BASS_ERROR_FILEOPEN,		"Can't open the file!",								sError);
 			ENUM_TO_VALUE(BASS_ERROR_DRIVER,		"Can't find a driver!",								sError);
 			ENUM_TO_VALUE(BASS_ERROR_BUFLOST,		"The sample buffer was lost!",						sError);
-			ENUM_TO_VALUE(BASS_ERROR_HANDLE,		"Invalid Channel",									sError);
+			ENUM_TO_VALUE(BASS_ERROR_HANDLE,		"Invalid channel!",									sError);
 			ENUM_TO_VALUE(BASS_ERROR_FORMAT,		"Unsupported sample format!",						sError);
 			ENUM_TO_VALUE(BASS_ERROR_POSITION,		"Invalid position!",								sError);
 			ENUM_TO_VALUE(BASS_ERROR_INIT,			"BASS_Init has not been successfully called!",		sError);
@@ -188,10 +188,10 @@ namespace UTIL
 			ENUM_TO_VALUE(BASS_ERROR_ALREADY,		"Already initialized, paused or used!",				sError);
 			ENUM_TO_VALUE(BASS_ERROR_NOCHAN,		"Can't get a free channel!",						sError);
 			ENUM_TO_VALUE(BASS_ERROR_ILLTYPE,		"An illegal type was specified!",					sError);
-			ENUM_TO_VALUE(BASS_ERROR_ILLPARAM,		"An illegal parameter was specified! (URL Wrong?)",	sError);
+			ENUM_TO_VALUE(BASS_ERROR_ILLPARAM,		"An illegal parameter was specified! (URL wrong?)",	sError);
 			ENUM_TO_VALUE(BASS_ERROR_NO3D,			"No 3D support!",									sError);
 			ENUM_TO_VALUE(BASS_ERROR_NOEAX,			"No EAX support!",									sError);
-			ENUM_TO_VALUE(BASS_ERROR_DEVICE,		"Illegal device! (No Soundcard, No access?)",		sError);
+			ENUM_TO_VALUE(BASS_ERROR_DEVICE,		"Illegal device! (No sound card, no access?)",		sError);
 			ENUM_TO_VALUE(BASS_ERROR_NOPLAY,		"Not playing!",										sError);
 			ENUM_TO_VALUE(BASS_ERROR_FREQ,			"Illegal sample rate!",								sError);
 			ENUM_TO_VALUE(BASS_ERROR_NOTFILE,		"The stream is not a file stream!",					sError);

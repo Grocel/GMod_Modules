@@ -213,8 +213,8 @@ namespace LUAINTERFACE
 			ADDMETHOD(IBASS3Channel, Remove);
 			ADDMETHOD(IBASS3Channel, IsValid);
 
-			ADDMETHOD(IBASS3Channel, StreamFile);
-			ADDMETHOD(IBASS3Channel, StreamURL);
+			ADDMETHOD(IBASS3Channel, PlayFile);
+			ADDMETHOD(IBASS3Channel, PlayURL);
 
 			ADDMETHOD(IBASS3Channel, Play);
 			ADDMETHOD(IBASS3Channel, Stop);
