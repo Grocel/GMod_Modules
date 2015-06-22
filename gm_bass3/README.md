@@ -8,10 +8,14 @@ Getting the FFT spectrum and tag information of a stream is also possible. On th
 So far it is available for Windows and Linux.
 
 ## Todo
-* Add Valve Filesystem support for dedicated servers.
+* Add Valve Filesystem support for dedicated servers. Its fine on client/singleplayer/listen server, though. This is a problems I could not fix yet, please help.
 * Support more tags and make the output format nicer to work with.
-* Maybe EAX Support
-* Compile for OSX or find someone doing it for me.
+* Maybe add EAX Support
+* Compile for OSX or find someone doing it for me. I can not find out how to do it properly. I'm not even able to test it as I don't own a Mac or OSX.
+
+## Requirements:
+* As it uses c++11 features you may need to install a c++11 runtime library on your operation system.
+* For Linux you may need to install ASIO and give the user that is running the server or the client "rwx" access to the sound device/interface.
 
 ## Lua references
 
@@ -284,9 +288,6 @@ printfft(g_channel)
 ```
 
 #### Setting and Getting the 3D Position
-
-#### Printing the FFT values.
-
 ```lua
 if g_channel then g_channel = g_channel:Remove() end
 
