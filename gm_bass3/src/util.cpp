@@ -173,46 +173,46 @@ namespace UTIL
 		const char* sError;
 		switch(iCode)
 		{
-			ENUM_TO_VALUE(BASS_OK,					"OK",												sError);
-			ENUM_TO_VALUE(BASS_ERROR_UNKNOWN,		"Unknown error!",									sError);
+			ENUM_TO_VALUE(BASS_OK,					"OK",														sError);
+			ENUM_TO_VALUE(BASS_ERROR_UNKNOWN,		"Unknown error!",											sError);
 
-			ENUM_TO_VALUE(BASS_ERROR_MEM,			"Memory error!",									sError);
-			ENUM_TO_VALUE(BASS_ERROR_FILEOPEN,		"Can't open the file!",								sError);
-			ENUM_TO_VALUE(BASS_ERROR_DRIVER,		"Can't find a driver!",								sError);
-			ENUM_TO_VALUE(BASS_ERROR_BUFLOST,		"The sample buffer was lost!",						sError);
-			ENUM_TO_VALUE(BASS_ERROR_HANDLE,		"Invalid channel!",									sError);
-			ENUM_TO_VALUE(BASS_ERROR_FORMAT,		"Unsupported sample format!",						sError);
-			ENUM_TO_VALUE(BASS_ERROR_POSITION,		"Invalid position!",								sError);
-			ENUM_TO_VALUE(BASS_ERROR_INIT,			"BASS_Init has not been successfully called!",		sError);
-			ENUM_TO_VALUE(BASS_ERROR_START,			"BASS_Start has not been successfully called!",		sError);
-			ENUM_TO_VALUE(BASS_ERROR_ALREADY,		"Already initialized, paused or used!",				sError);
-			ENUM_TO_VALUE(BASS_ERROR_NOCHAN,		"Can't get a free channel!",						sError);
-			ENUM_TO_VALUE(BASS_ERROR_ILLTYPE,		"An illegal type was specified!",					sError);
-			ENUM_TO_VALUE(BASS_ERROR_ILLPARAM,		"An illegal parameter was specified! (URL wrong?)",	sError);
-			ENUM_TO_VALUE(BASS_ERROR_NO3D,			"No 3D support!",									sError);
-			ENUM_TO_VALUE(BASS_ERROR_NOEAX,			"No EAX support!",									sError);
-			ENUM_TO_VALUE(BASS_ERROR_DEVICE,		"Illegal device! (No sound card, no access?)",		sError);
-			ENUM_TO_VALUE(BASS_ERROR_NOPLAY,		"Not playing!",										sError);
-			ENUM_TO_VALUE(BASS_ERROR_FREQ,			"Illegal sample rate!",								sError);
-			ENUM_TO_VALUE(BASS_ERROR_NOTFILE,		"The stream is not a file stream!",					sError);
-			ENUM_TO_VALUE(BASS_ERROR_NOHW,			"No hardware voices available!",					sError);
-			ENUM_TO_VALUE(BASS_ERROR_EMPTY,			"The MOD music has no sequence data!",				sError);
-			ENUM_TO_VALUE(BASS_ERROR_NONET,			"No internet connection could be opened!",			sError);
-			ENUM_TO_VALUE(BASS_ERROR_CREATE,		"Couldn't create the file!",						sError);
-			ENUM_TO_VALUE(BASS_ERROR_NOFX,			"Effects are not available!",						sError);
-			ENUM_TO_VALUE(BASS_ERROR_NOTAVAIL,		"Requested data is not available!",					sError);
-			ENUM_TO_VALUE(BASS_ERROR_DECODE,		"The channel is a decoding channel!",				sError);
-			ENUM_TO_VALUE(BASS_ERROR_DX,			"A sufficient DirectX version is not installed!",	sError);
-			ENUM_TO_VALUE(BASS_ERROR_TIMEOUT,		"Connection timedout!",								sError);
-			ENUM_TO_VALUE(BASS_ERROR_FILEFORM,		"Unsupported file format!",							sError);
-			ENUM_TO_VALUE(BASS_ERROR_SPEAKER,		"Speaker not found!",								sError);
-			ENUM_TO_VALUE(BASS_ERROR_VERSION,		"Invalid BASS version!",							sError);
-			ENUM_TO_VALUE(BASS_ERROR_CODEC,			"Codec not supported!",								sError);
-			ENUM_TO_VALUE(BASS_ERROR_ENDED,			"The channel has ended!",							sError);
-			ENUM_TO_VALUE(BASS_ERROR_BUSY,			"The device is busy!",								sError);
+			ENUM_TO_VALUE(BASS_ERROR_MEM,			"Memory error!",											sError);
+			ENUM_TO_VALUE(BASS_ERROR_FILEOPEN,		"Can't open the file!",										sError);
+			ENUM_TO_VALUE(BASS_ERROR_DRIVER,		"Can't find a driver!",										sError);
+			ENUM_TO_VALUE(BASS_ERROR_BUFLOST,		"The sample buffer was lost!",								sError);
+			ENUM_TO_VALUE(BASS_ERROR_HANDLE,		"Invalid channel!",											sError);
+			ENUM_TO_VALUE(BASS_ERROR_FORMAT,		"Unsupported sample format!",								sError);
+			ENUM_TO_VALUE(BASS_ERROR_POSITION,		"Invalid position!",										sError);
+			ENUM_TO_VALUE(BASS_ERROR_INIT,			"BASS_Init has not been successfully called!",				sError);
+			ENUM_TO_VALUE(BASS_ERROR_START,			"BASS_Start has not been successfully called!",				sError);
+			ENUM_TO_VALUE(BASS_ERROR_ALREADY,		"Already initialized, paused or used!",						sError);
+			ENUM_TO_VALUE(BASS_ERROR_NOCHAN,		"Can't get a free channel!",								sError);
+			ENUM_TO_VALUE(BASS_ERROR_ILLTYPE,		"An illegal type was specified!",							sError);
+			ENUM_TO_VALUE(BASS_ERROR_ILLPARAM,		"An illegal parameter was specified! (URL wrong?)",			sError);
+			ENUM_TO_VALUE(BASS_ERROR_NO3D,			"No 3D support!",											sError);
+			ENUM_TO_VALUE(BASS_ERROR_NOEAX,			"No EAX support!",											sError);
+			ENUM_TO_VALUE(BASS_ERROR_DEVICE,		"Illegal device! (No sound card, no access?)",				sError);
+			ENUM_TO_VALUE(BASS_ERROR_NOPLAY,		"Not playing!",												sError);
+			ENUM_TO_VALUE(BASS_ERROR_FREQ,			"Illegal sample rate!",										sError);
+			ENUM_TO_VALUE(BASS_ERROR_NOTFILE,		"The stream is not a file stream!",							sError);
+			ENUM_TO_VALUE(BASS_ERROR_NOHW,			"No hardware voices available!",							sError);
+			ENUM_TO_VALUE(BASS_ERROR_EMPTY,			"The MOD music has no sequence data!",						sError);
+			ENUM_TO_VALUE(BASS_ERROR_NONET,			"No internet connection could be opened!",					sError);
+			ENUM_TO_VALUE(BASS_ERROR_CREATE,		"Couldn't create the file!",								sError);
+			ENUM_TO_VALUE(BASS_ERROR_NOFX,			"Effects are not available!",								sError);
+			ENUM_TO_VALUE(BASS_ERROR_NOTAVAIL,		"Requested data is not available!",							sError);
+			ENUM_TO_VALUE(BASS_ERROR_DECODE,		"The channel is a decoding channel!",						sError);
+			ENUM_TO_VALUE(BASS_ERROR_DX,			"A sufficient DirectX or ALSA version is not installed!",	sError);
+			ENUM_TO_VALUE(BASS_ERROR_TIMEOUT,		"Connection timedout!",										sError);
+			ENUM_TO_VALUE(BASS_ERROR_FILEFORM,		"Unsupported file format!",									sError);
+			ENUM_TO_VALUE(BASS_ERROR_SPEAKER,		"Speaker not found!",										sError);
+			ENUM_TO_VALUE(BASS_ERROR_VERSION,		"Invalid BASS version!",									sError);
+			ENUM_TO_VALUE(BASS_ERROR_CODEC,			"Codec not supported!",										sError);
+			ENUM_TO_VALUE(BASS_ERROR_ENDED,			"The channel has ended!",									sError);
+			ENUM_TO_VALUE(BASS_ERROR_BUSY,			"The device is busy!",										sError);
 
 			//Custom Errors
-			ENUM_TO_VALUE(BASS_ERROR_FILESYSTEM,	"Missing Filesystem!",								sError);
+			ENUM_TO_VALUE(BASS_ERROR_FILESYSTEM,	"Valve Filesystem is missing!",								sError);
 
 			default: sError = "Unknown error!";
 		}

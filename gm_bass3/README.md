@@ -130,7 +130,7 @@ Also never pass the numbers directly, as they could be changed too.
 ##### Variables
 | Name                | Value   | Description |
 | ------------------- | ------- | ----------- |
-| BASS3.ModuleVersion | 1       | Version of gm_bass3. |
+| BASS3.ModuleVersion | 2       | Version of gm_bass3. |
 | BASS3.Version       | 2041100 | Version of the BASS sound engine. |
 
 

@@ -44,25 +44,27 @@ GMOD_MODULE_OPEN()
 		return 0;
 	}
 
-	//Msg("GM_BASS3 Loaded.\n");
-
 	if(!g_CLIENT) // Only for the server
 	{
 #ifndef _WIN32
 		BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, true); // Linux compatibility.
-
-		if(!BASS_Init(-1, 44100, BASS_DEVICE_DMIX, NULL, NULL))
-#else
-		if(!BASS_Init(-1, 44100, BASS_NULL, NULL, NULL))
 #endif
+		if(!BASS_Init(-1, 44100, BASS_NULL, NULL, NULL))
 		{
 			int error = BASS_ErrorGetCode();
 			if (error == BASS_ERROR_ALREADY) return 0; // Bass is already loaded, so use that.
 			char err[256];
 
+			if (error == BASS_ERROR_DX)
+			{
+				snprintf(err, 256, "BASS Init failed, error code %d. DirectX or ALSA is not available.\nMake sure you install ASIO on Linux or DirectX on Windows.", error);
+				LUA->ThrowError(err);
+				return 0;
+			}
+
 			if (error == BASS_ERROR_DRIVER)
 			{
-				snprintf(err, 256, "BASS Init failed, error code %d. Sound Driver not available.\nIf you are on Linux, make sure you install the ASIO drivers.\nThe user running this application needs 'xrw' access to the sound interface too.", error);
+				snprintf(err, 256, "BASS Init failed, error code %d. sound driver not available.\nIf you are on Linux, make sure you install the ASIO drivers.\nThe user running this application needs 'xrw' access to the sound interface too.", error);
 				LUA->ThrowError(err);
 				return 0;
 			}
@@ -91,7 +93,6 @@ GMOD_MODULE_OPEN()
 	BASS_SetConfig(BASS_CONFIG_NET_TIMEOUT, 10000);
 	BASS_SetConfig(BASS_CONFIG_NET_READTIMEOUT, 10000);
 	BASS_SetConfig(BASS_CONFIG_VERIFY, 0x8000); // 32 kB
-	//Msg("GM_BASS3 Loaded (g_SELFLOADED = true).\n");
 
 	return 0;
 }
@@ -138,7 +139,6 @@ GMOD_MODULE_CLOSE()
 		BASS_PluginFree(BASS_NULL);
 		BASS_Free();
 	}
-	//Msg("GM_BASS3 Closed.\n");
 
 	return 0;
 }
