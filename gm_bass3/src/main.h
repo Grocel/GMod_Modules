@@ -3,6 +3,8 @@
 #include <cstring>
 #include <thread>
 #include <mutex>
+#include <exception>
+#include <stdexcept>
 
 #include "list.h"
 #include "globals.h"

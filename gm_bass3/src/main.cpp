@@ -5,12 +5,9 @@ using namespace GarrysMod::Lua;
 //
 // Called when you module is opened
 //
-GMOD_MODULE_OPEN()
-{
-	g_CLOSING = false;
-	g_IntialTickHappend = false;
-	g_SELFLOADED = false;
 
+int Init(lua_State* state)
+{
 	g_pListPendingCallbacks = new SyncList<TChannelCallbackData *>;
 	g_pListRunningThreads = new SyncList<thread *>;
 	g_pfFFTBuffer = new float[32768];
@@ -32,6 +29,15 @@ GMOD_MODULE_OPEN()
 	LUAINTERFACE::SetupBASSTable(state);
 	LUAINTERFACE::SetupChannelObject(state);
 
+	return 0;
+}
+
+GMOD_MODULE_OPEN()
+{
+	g_CLOSING = false;
+	g_IntialTickHappend = false;
+	g_SELFLOADED = false;
+
 	unsigned int iVer = HIWORD(BASS_GetVersion());
 	if(iVer < BASSVERSION)
 	{
@@ -46,55 +52,118 @@ GMOD_MODULE_OPEN()
 
 	if(!g_CLIENT) // Only for the server
 	{
-#ifndef _WIN32
-		BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, true); // Linux compatibility.
-#endif
-		if(!BASS_Init(-1, 44100, BASS_NULL, NULL, NULL))
+		char err[256];
+		err[0] = 0;
+		err[255] = 0;
+
+		try
 		{
-			int error = BASS_ErrorGetCode();
-			if (error == BASS_ERROR_ALREADY) return 0; // Bass is already loaded, so use that.
-			char err[256];
-
-			if (error == BASS_ERROR_DX)
+			BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, true);
+			if(!BASS_Init(-1, 44100, BASS_NULL, NULL, NULL))
 			{
-				snprintf(err, 256, "BASS Init failed, error code %d. DirectX or ALSA is not available.\nMake sure you install ASIO on Linux or DirectX on Windows.", error);
+				int error = BASS_ErrorGetCode();
+				if (error == BASS_ERROR_ALREADY) return 0; // Bass is already loaded, so use that.
+
+				if (error == BASS_ERROR_DX)
+				{
+					snprintf(err, 256, "BASS Init failed, error code %d.\nDirectX or ALSA is not available.\nMake sure you installed ASIO on Linux or DirectX on Windows.", error);
+
+					err[255] = 0;
+					LUA->ThrowError(err);
+
+					return 0;
+				}
+
+				if (error == BASS_ERROR_DRIVER)
+				{
+					snprintf(err, 256, "BASS Init failed, error code %d.\nSound driver is not available.\nIf you are on Linux, make sure you installed ASIO.\nOn Linux the user running this application needs 'xrw' access to the sound interface too.", error);
+
+					err[255] = 0;
+					LUA->ThrowError(err);
+
+					return 0;
+				}
+
+				if (error == BASS_ERROR_DEVICE)
+				{
+					snprintf(err, 256, "BASS Init failed, error code %d.\nSound driver is not available or the device was not found.\nIf you are on Linux, make sure you installed ASIO.", error);
+
+					err[255] = 0;
+					LUA->ThrowError(err);
+
+					return 0;
+				}
+
+				snprintf(err, 256, "BASS Init failed, error code %d.\n", error);
+
+				err[255] = 0;
 				LUA->ThrowError(err);
+
 				return 0;
 			}
+		}
+		catch(const overflow_error& e)
+		{
+			snprintf(err, 256, "BASS Init failed, exception error: %s\n", e.what());
 
-			if (error == BASS_ERROR_DRIVER)
-			{
-				snprintf(err, 256, "BASS Init failed, error code %d. sound driver not available.\nIf you are on Linux, make sure you install the ASIO drivers.\nThe user running this application needs 'xrw' access to the sound interface too.", error);
-				LUA->ThrowError(err);
-				return 0;
-			}
-
-			snprintf(err, 256, "BASS Init failed, error code %d.\n", error);
+			err[255] = 0;
 			LUA->ThrowError(err);
+		}
+		catch(const runtime_error& e)
+		{
+			snprintf(err, 256, "BASS Init failed, exception error: %s\n", e.what());
+
+			err[255] = 0;
+			LUA->ThrowError(err);
+		}
+		catch(const exception& e)
+		{
+			snprintf(err, 256, "BASS Init failed, exception error: %s\n", e.what());
+
+			err[255] = 0;
+			LUA->ThrowError(err);
+		}
+		catch(char *s)
+		{
+			snprintf(err, 256, "BASS Init failed, exception error: %s\n", s);
+
+			err[255] = 0;
+			LUA->ThrowError(err);
+		}
+		catch(...)
+		{
+			LUA->ThrowError("BASS Init failed, exception error: Unknown");
 			return 0;
 		}
 	}
 	else
 	{
-		return 0;
+		return Init(state);
 	}
 
 	g_SELFLOADED = true;
 
+	try
+	{
+		BASS_Stop();
+		BASS_Start();
 
-	BASS_Stop();
-	BASS_Start();
+		BASS_SetConfig(BASS_CONFIG_NET_PLAYLIST, 1);
 
-	BASS_SetConfig(BASS_CONFIG_NET_PLAYLIST, 1);
+		BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 1000);
+		BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
+		BASS_SetConfig(BASS_CONFIG_NET_BUFFER, 10000);
+		BASS_SetConfig(BASS_CONFIG_NET_TIMEOUT, 10000);
+		BASS_SetConfig(BASS_CONFIG_NET_READTIMEOUT, 10000);
+		BASS_SetConfig(BASS_CONFIG_VERIFY, 0x8000); // 32 kB
+	}
+	catch(...)
+	{
+		LUA->ThrowError("BASS Init failed, exception error: Unknown");
+		return 0;
+	}
 
-	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 1000);
-	BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
-	BASS_SetConfig(BASS_CONFIG_NET_BUFFER, 10000);
-	BASS_SetConfig(BASS_CONFIG_NET_TIMEOUT, 10000);
-	BASS_SetConfig(BASS_CONFIG_NET_READTIMEOUT, 10000);
-	BASS_SetConfig(BASS_CONFIG_VERIFY, 0x8000); // 32 kB
-
-	return 0;
+	return Init(state);
 }
 
 //
@@ -111,7 +180,6 @@ GMOD_MODULE_CLOSE()
 	}
 
 	UTIL::ClearPendingChannels(state);
-
 	LUAINTERFACE::UnrefGlobalReferences(state);
 
 	if(g_pListRunningThreads != NULL)
@@ -134,10 +202,17 @@ GMOD_MODULE_CLOSE()
 
 	if(g_SELFLOADED)
 	{
-		BASS_Stop();
+		try
+		{
+			BASS_Stop();
 
-		BASS_PluginFree(BASS_NULL);
-		BASS_Free();
+			BASS_PluginFree(BASS_NULL);
+			BASS_Free();
+		}
+		catch(...)
+		{
+			return 0;
+		}
 	}
 
 	return 0;

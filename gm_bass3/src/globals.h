@@ -3,6 +3,8 @@
 #include <mutex>
 #include <cstdio>
 #include <cstdlib>
+#include <exception>
+#include <stdexcept>
 
 // Compiling with Source SDK 2013 for Linux/OSX? Don't forget this:
 #include "steam/steamtypes.h"
