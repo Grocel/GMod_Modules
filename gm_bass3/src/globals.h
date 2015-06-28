@@ -21,7 +21,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#define GM_BASS_VERSION 2
+#define GM_BASS_VERSION 3
 
 #define ENUM_TO_VALUE(ENUM, VALUE, VAR) case ENUM: VAR = VALUE; break
 

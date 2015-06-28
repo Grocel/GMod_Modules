@@ -50,7 +50,11 @@ GMOD_MODULE_OPEN()
 		return 0;
 	}
 
-	if(!g_CLIENT) // Only for the server
+	if(g_CLIENT)
+	{
+		return Init(state);
+	}
+	else // Only for the server
 	{
 		char err[256];
 		err[0] = 0;
@@ -59,10 +63,10 @@ GMOD_MODULE_OPEN()
 		try
 		{
 			BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, true);
-			if(!BASS_Init(-1, 44100, BASS_NULL, NULL, NULL))
+			if(!BASS_Init(-1, 44100, BASS_NULL, NULL, NULL)) // Try to load Bass.
 			{
 				int error = BASS_ErrorGetCode();
-				if (error == BASS_ERROR_ALREADY) return 0; // Bass is already loaded, so use that.
+				if (error == BASS_ERROR_ALREADY) return Init(state); // Bass is already loaded, so use that.
 
 				if (error == BASS_ERROR_DX)
 				{
@@ -136,10 +140,6 @@ GMOD_MODULE_OPEN()
 			return 0;
 		}
 	}
-	else
-	{
-		return Init(state);
-	}
 
 	g_SELFLOADED = true;
 
@@ -177,6 +177,7 @@ GMOD_MODULE_CLOSE()
 	{
 		g_thCleanUp->join();
 		delete g_thCleanUp;
+		g_thCleanUp = NULL;
 	}
 
 	UTIL::ClearPendingChannels(state);
@@ -211,7 +212,6 @@ GMOD_MODULE_CLOSE()
 		}
 		catch(...)
 		{
-			return 0;
 		}
 	}
 

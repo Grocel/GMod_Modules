@@ -14,6 +14,7 @@ void thfnLoadStream(TChannelThreadArgs ThreadArgs)
 {
 	if(!g_IntialTickHappend) return;
 	if(g_thCleanUp == NULL) return;
+	if(g_pListPendingCallbacks == NULL) return;
 
 	TChannel* pChannel = ThreadArgs.pChannel;
 	bool bIsRecycledChannel;
@@ -55,7 +56,7 @@ void thfnCleanUp()
 
 	while(true)
 	{
-		if(i > 50)
+		if(i > 100)
 		{
 			UTIL::ClearLoadingThreads();
 			i = 0;
@@ -64,7 +65,8 @@ void thfnCleanUp()
 		if(g_CLOSING) break;
 		i++;
 
-		SLEEP(200);
+		this_thread::yield();
+		SLEEP(100);
 	}
 
 	UTIL::ClearLoadingThreads();
@@ -80,6 +82,8 @@ namespace UTIL
 	bool LoadStream(TChannelThreadArgs& ThreadArgs, bool bNotThreaded)
 	{
 		if(!g_IntialTickHappend) return false;
+		if(g_pListPendingCallbacks == NULL) return false;
+		if(g_pListRunningThreads == NULL) return false;
 
 		// Prevent overflow
 		if(g_pListPendingCallbacks->getSize() > 512) return false;
@@ -141,6 +145,8 @@ namespace UTIL
 
 	void ClearLoadingThreads()
 	{
+		if(g_pListRunningThreads == NULL) return;
+
 		while(g_pListRunningThreads->getSize() > 0)
 		{
 			thread *thLoadStream = g_pListRunningThreads->remove();
@@ -153,6 +159,8 @@ namespace UTIL
 
 	void ClearPendingChannels(lua_State* state)
 	{
+		if(g_pListPendingCallbacks == NULL) return;
+
 		while(g_pListPendingCallbacks->getSize() > 0)
 		{
 			TChannelCallbackData* pCallbackData = g_pListPendingCallbacks->remove();
