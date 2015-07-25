@@ -8,7 +8,7 @@
 .svn/
 lib/
 tmp/
-sourcesdk2013/
+sourcesdk2013/*
 *.tmp
 *.bak
 *.swp

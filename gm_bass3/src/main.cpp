@@ -50,6 +50,8 @@ GMOD_MODULE_OPEN()
 		return 0;
 	}
 
+	LUAINTERFACE::SetupRealm(state);
+
 	if(g_CLIENT)
 	{
 		return Init(state);
@@ -112,6 +114,7 @@ GMOD_MODULE_OPEN()
 
 			err[255] = 0;
 			LUA->ThrowError(err);
+			return 0;
 		}
 		catch(const runtime_error& e)
 		{
@@ -119,6 +122,7 @@ GMOD_MODULE_OPEN()
 
 			err[255] = 0;
 			LUA->ThrowError(err);
+			return 0;
 		}
 		catch(const exception& e)
 		{
@@ -126,6 +130,7 @@ GMOD_MODULE_OPEN()
 
 			err[255] = 0;
 			LUA->ThrowError(err);
+			return 0;
 		}
 		catch(char *s)
 		{
@@ -133,6 +138,7 @@ GMOD_MODULE_OPEN()
 
 			err[255] = 0;
 			LUA->ThrowError(err);
+			return 0;
 		}
 		catch(...)
 		{

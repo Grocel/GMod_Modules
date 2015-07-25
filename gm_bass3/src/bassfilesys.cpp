@@ -14,11 +14,31 @@
 
 #ifdef _WIN32
 	#define FILESYSTEM_LIB "filesystem_stdio.dll"
+	#define FILESYSTEM_LIB_DEDISV "filesys_export.dll"
+
+#define MODULE_HEADER HMODULE
+	#define MODULE_LOAD LoadLibrary
+	#define MODULE_LOAD_FLAGS
+	#define MODULE_IMPORT GetProcAddress
+	#define MODULE_FREE FreeLibrary
+	#define MODULE_ERROR NULL
+
 #else
+	#include <dlfcn.h>
+
+	#define MODULE_HEADER void*
+	#define MODULE_LOAD dlopen
+	#define MODULE_LOAD_FLAGS ,RTLD_LAZY
+	#define MODULE_IMPORT dlsym
+	#define MODULE_FREE dlclose
+	#define MODULE_ERROR dlerror()
+
 	#ifdef _LINUX
 		#define FILESYSTEM_LIB "filesystem_stdio.so"
+		#define FILESYSTEM_LIB_DEDISV "./garrysmod/addons/filesys_export.so"
 	#else
 		#define FILESYSTEM_LIB "filesystem_stdio.dylib"
+		#define FILESYSTEM_LIB_DEDISV "./garrysmod/addons/filesystem_stdio.dylib"		
 	#endif
 #endif
 
@@ -75,36 +95,120 @@ BOOL CALLBACK StreamSeekProc(QWORD offset, void *param)
 BASS_FILEPROCS StreamDataTable = {StreamCloseProc, StreamLenProc, StreamReadProc, StreamSeekProc}; // callback table
 // CALLBACKs end
 
+typedef IFileSystem* (*GetFilesystem_t)();
+
 namespace BASSFILESYS
 {
 	bool Init()
 	{
 		if(g_pFileSystem != NULL) return true;
-		//ConnectTier2Libraries( CreateInterfaceFn *pFactoryList, 1 )
 
-		CSysModule* FileSystemFactoryDLL = NULL;
-		if (Sys_LoadInterface(FILESYSTEM_LIB, FILESYSTEM_INTERFACE_VERSION_GMOD, &FileSystemFactoryDLL, (void**)&g_pFileSystem))
+		char err[256];
+		err[0] = 0;
+		err[255] = 0;
+
+		try
 		{
-			if(g_pFileSystem != NULL && g_pFileSystem != nullptr)
+			if(g_IsDedicatedServer)
 			{
+				if(FILESYSTEM_LIB_DEDISV == NULL) return false;
+
+				MODULE_HEADER FileSystemExporter = NULL;
+				FileSystemExporter = MODULE_LOAD(FILESYSTEM_LIB_DEDISV MODULE_LOAD_FLAGS);
+				if(FileSystemExporter == NULL || FileSystemExporter == nullptr)
+				{
+					char* error = MODULE_ERROR;
+					if(error != NULL)
+						Warning("BASS Filesystem error, Error getting the " FILESYSTEM_LIB_DEDISV " plugin:\n%s\n", error);
+					else
+						Warning("BASS Filesystem error, Error getting the " FILESYSTEM_LIB_DEDISV " plugin.\n");
+					g_pFileSystem = NULL;
+					return false;		
+				}
+			
+				GetFilesystem_t GetFilesystem = (GetFilesystem_t)MODULE_IMPORT(FileSystemExporter, "GetFilesystem");
+				if(GetFilesystem == NULL || GetFilesystem == nullptr)
+				{
+					char* error = MODULE_ERROR;
+					if(error != NULL)
+						Warning("BASS Filesystem error, Error getting the GetFilesystem function of the " FILESYSTEM_LIB_DEDISV " plugin:\n%s\n", error);
+					else
+						Warning("BASS Filesystem error, Error getting the GetFilesystem function of the " FILESYSTEM_LIB_DEDISV " plugin.\n");
+					g_pFileSystem = NULL;
+
+					MODULE_FREE(FileSystemExporter);
+					return false;		
+				}
+
+				MODULE_FREE(FileSystemExporter);
+				g_pFileSystem = GetFilesystem();
+
+				if(g_pFileSystem == NULL || g_pFileSystem == nullptr)
+				{
+					Warning("BASS Filesystem error, Error getting the IFileSystem " FILESYSTEM_INTERFACE_VERSION_GMOD " interface from the " FILESYSTEM_LIB_DEDISV " plugin.\n");
+					g_pFileSystem = NULL;
+					return false;
+				}
+
 				g_pFileSystem->Connect(Sys_GetFactoryThis());
 				g_pFileSystem->Init();
 
-				g_pFileSystem->AddSearchPath( "garrysmod", "GAME" );
-				//g_pFileSystem->PrintSearchPaths();
+				return true;
+			}
+			else
+			{
+				if(FILESYSTEM_LIB == NULL) return false;
+
+				CSysModule* FileSystemFactoryDLL = NULL;
+				if (!Sys_LoadInterface(FILESYSTEM_LIB, FILESYSTEM_INTERFACE_VERSION_GMOD, &FileSystemFactoryDLL, (void**)&g_pFileSystem))
+				{
+					Warning("BASS Filesystem error, Error getting the " FILESYSTEM_LIB " factory or the IFileSystem " FILESYSTEM_INTERFACE_VERSION_GMOD " interface.\n");
+					g_pFileSystem = NULL;
+					return false;
+				}
+
+				if(g_pFileSystem == NULL && g_pFileSystem == nullptr)
+				{
+					Warning("BASS Filesystem error, Error getting IFileSystem " FILESYSTEM_INTERFACE_VERSION_GMOD " interface from the " FILESYSTEM_LIB " factory.\n");
+					g_pFileSystem = NULL;
+					return false;
+				}
+
+				g_pFileSystem->Connect(Sys_GetFactoryThis());
+				g_pFileSystem->Init();
 
 				return true;
 			}
-			g_pFileSystem = NULL;
 		}
-
-		Error( "BASS Init error, Error getting " FILESYSTEM_LIB " factory or IFileSystem " FILESYSTEM_INTERFACE_VERSION_GMOD " interface.\n" );
-		return false;
+		catch(const overflow_error& e)
+		{
+			Warning("BASS Filesystem error, exception error: %s\n", e.what());
+			return false;
+		}
+		catch(const runtime_error& e)
+		{
+			Warning("BASS Filesystem error, exception error: %s\n", e.what());
+			return false;
+		}
+		catch(const exception& e)
+		{
+			Warning("BASS Filesystem error, exception error: %s\n", e.what());
+			return false;
+		}
+		catch(char *s)
+		{
+			Warning("BASS Filesystem error, exception error: %s\n", s);
+			return false;
+		}
+		catch(...)
+		{
+			Warning("BASS Filesystem error, exception error: Unknown");
+			return false;
+		}
 	}
 
 	bool PlayFile(const char* sFile, bass_flag eFlags, bass_p* ppHandle, int* piErr)
 	{
-		//Msg( "BASSFILESYS::PlayFile() 1\n" );
 		*ppHandle = BASS_NULL;
 		*piErr = BASS_ERROR_FILEOPEN;
 
@@ -112,27 +216,20 @@ namespace BASSFILESYS
 		if(ppHandle == NULL) return false;
 		if(piErr == NULL) return false;
 
-		//Msg( "BASSFILESYS::PlayFile() 2\n" );
 		*piErr = BASS_ERROR_FILESYSTEM;
 		if(g_pFileSystem == NULL) return false;
-		//Msg( "BASSFILESYS::PlayFile() 2.1\n" );
 		bass_p pHandle = BASS_NULL;
 		int iErr = -1;
 		FileHandle_t fh = NULL;
 	
-		//Msg( "BASSFILESYS::PlayFile('%s') 2.2\n", sFile );
 		fh = g_pFileSystem->Open(sFile, "rb", "GAME");
-		//Msg( "BASSFILESYS::PlayFile() 3\n" );
 		if(fh != NULL)
 		{
-			//Msg( "BASSFILESYS::PlayFile() 3a\n" );
-			pHandle = BASS_StreamCreateFileUser(STREAMFILE_NOBUFFER, eFlags, &StreamDataTable, fh); // playback
+			pHandle = BASS_StreamCreateFileUser(STREAMFILE_NOBUFFER, eFlags, &StreamDataTable, fh);
 			iErr = BASS_ErrorGetCode();
 
 			if(iErr == BASS_ERROR_FILEFORM)
 			{
-				//Msg( "BASSFILESYS::PlayFile() 3a1a\n" );
-
 				fh = g_pFileSystem->Open(sFile, "rb", "GAME");
 				if(fh != NULL)
 				{
@@ -149,20 +246,17 @@ namespace BASSFILESYS
 				}
 				else
 				{
-					//Msg( "BASSFILESYS::PlayFile() 3b1b\n" );
 					iErr = BASS_ERROR_FILEOPEN;
 				}
 			}
 		}
 		else
 		{
-			//Msg( "BASSFILESYS::PlayFile() 3b\n" );
 			iErr = BASS_ERROR_FILEOPEN;
 		}
 
 		*ppHandle = pHandle;
 		*piErr = iErr;
-		//Msg( "BASSFILESYS::PlayFile() 4\n" );
 
 		if(iErr != BASS_OK)
 		{

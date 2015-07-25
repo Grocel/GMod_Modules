@@ -21,7 +21,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#define GM_BASS_VERSION 3
+#define GM_BASS_VERSION 4
 
 #define ENUM_TO_VALUE(ENUM, VALUE, VAR) case ENUM: VAR = VALUE; break
 
@@ -67,6 +67,7 @@ struct TChannelThreadArgs
 };
 
 extern bool g_CLIENT;
+extern bool g_IsDedicatedServer;
 extern bool g_SELFLOADED;
 extern bool g_CLOSING;
 extern bool g_IntialTickHappend;

@@ -1,6 +1,7 @@
 #include "globals.h"
 
 bool g_CLIENT = false;
+bool g_IsDedicatedServer = false;
 bool g_SELFLOADED = false;
 bool g_CLOSING = false;
 bool g_IntialTickHappend = false;

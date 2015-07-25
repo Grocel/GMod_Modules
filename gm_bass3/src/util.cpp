@@ -193,6 +193,7 @@ namespace UTIL
 			ENUM_TO_VALUE(BASS_ERROR_POSITION,		"Invalid position!",										sError);
 			ENUM_TO_VALUE(BASS_ERROR_INIT,			"BASS_Init has not been successfully called!",				sError);
 			ENUM_TO_VALUE(BASS_ERROR_START,			"BASS_Start has not been successfully called!",				sError);
+			ENUM_TO_VALUE(BASS_ERROR_SSL,			"SSL/HTTPS support is not available.",						sError);
 			ENUM_TO_VALUE(BASS_ERROR_ALREADY,		"Already initialized, paused or used!",						sError);
 			ENUM_TO_VALUE(BASS_ERROR_NOCHAN,		"Can't get a free channel!",								sError);
 			ENUM_TO_VALUE(BASS_ERROR_ILLTYPE,		"An illegal type was specified!",							sError);

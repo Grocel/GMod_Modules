@@ -12,18 +12,17 @@ bass_flag GetPlayFlags(unsigned int iLuaFlag, bool& bNoPlay)
 	bool bNoBlock = false;
 	bNoPlay = false;
 
-	bass_flag iFlags = BASS_SAMPLE_FLOAT;
-	if(iLuaFlag == LUAENUM_MODE_NONE) return iFlags | BASS_STREAM_BLOCK;
-
+	bass_flag eFlags = BASS_SAMPLE_FLOAT;
+	if(iLuaFlag == LUAENUM_MODE_NONE) return eFlags | BASS_STREAM_BLOCK;
 
 	if(g_CLIENT && (iLuaFlag & LUAENUM_MODE_3D))
-		iFlags |= (BASS_SAMPLE_3D | BASS_SAMPLE_MUTEMAX | BASS_SAMPLE_MONO); // 3D needs mono sound
+		eFlags |= (BASS_SAMPLE_3D | BASS_SAMPLE_MUTEMAX | BASS_SAMPLE_MONO); // 3D needs mono sound
 
 	if(iLuaFlag & LUAENUM_MODE_LOOP)
-		iFlags |= BASS_SAMPLE_LOOP;
+		eFlags |= BASS_SAMPLE_LOOP;
 
 	if(iLuaFlag & LUAENUM_MODE_MONO)
-		iFlags |= BASS_SAMPLE_MONO;
+		eFlags |= BASS_SAMPLE_MONO;
 
 	if(iLuaFlag & LUAENUM_MODE_NOBLOCK)
 		bNoBlock = true;
@@ -32,9 +31,9 @@ bass_flag GetPlayFlags(unsigned int iLuaFlag, bool& bNoPlay)
 		bNoPlay = true;
 	
 	if(!bNoBlock)
-		iFlags |= BASS_STREAM_BLOCK;
+		eFlags |= BASS_STREAM_BLOCK;
 
-	return iFlags;
+	return eFlags;
 }
 
 bass_flag GetPlayFlags(const char* sLuaFlag, bool& bNoPlay)
@@ -42,11 +41,11 @@ bass_flag GetPlayFlags(const char* sLuaFlag, bool& bNoPlay)
 	bool bNoBlock = false;
 	bNoPlay = false;
 
-	bass_flag iFlags = BASS_SAMPLE_FLOAT;
-	if(sLuaFlag == NULL) return iFlags | BASS_STREAM_BLOCK;
+	bass_flag eFlags = BASS_SAMPLE_FLOAT;
+	if(sLuaFlag == NULL) return eFlags | BASS_STREAM_BLOCK;
 
 	string sBuf = string(sLuaFlag) + string(" ");
-	if(sBuf == " ") return iFlags | BASS_STREAM_BLOCK;
+	if(sBuf == " ") return eFlags | BASS_STREAM_BLOCK;
 
 	transform(sBuf.begin(), sBuf.end(), sBuf.begin(), ::tolower);
 
@@ -66,7 +65,7 @@ bass_flag GetPlayFlags(const char* sLuaFlag, bool& bNoPlay)
 
 		if(g_CLIENT && (sFind == "3d"))
 		{
-			iFlags |= (BASS_SAMPLE_3D | BASS_SAMPLE_MUTEMAX | BASS_SAMPLE_MONO); // 3D needs mono sound
+			eFlags |= (BASS_SAMPLE_3D | BASS_SAMPLE_MUTEMAX | BASS_SAMPLE_MONO); // 3D needs mono sound
 
 			posSpace = sBuf.find(" ");
 			continue;
@@ -74,7 +73,7 @@ bass_flag GetPlayFlags(const char* sLuaFlag, bool& bNoPlay)
 
 		if(sFind == "loop")
 		{
-			iFlags |= BASS_SAMPLE_LOOP;
+			eFlags |= BASS_SAMPLE_LOOP;
 
 			posSpace = sBuf.find(" ");
 			continue;
@@ -82,7 +81,7 @@ bass_flag GetPlayFlags(const char* sLuaFlag, bool& bNoPlay)
 
 		if(sFind == "mono")
 		{
-			iFlags |= BASS_SAMPLE_MONO;
+			eFlags |= BASS_SAMPLE_MONO;
 
 			posSpace = sBuf.find(" ");
 			continue;
@@ -108,9 +107,9 @@ bass_flag GetPlayFlags(const char* sLuaFlag, bool& bNoPlay)
 	}
 
 	if(!bNoBlock)
-		iFlags |= BASS_STREAM_BLOCK;
+		eFlags |= BASS_STREAM_BLOCK;
 
-	return iFlags;
+	return eFlags;
 }
 
 unsigned char SetChannelStateFlag(bass_flag iBassFlag)
@@ -131,6 +130,8 @@ namespace LUAFUNC
 	LUA_FUNCTION(PullPendingChannels)
 	{
 		if(g_CLOSING) return 0;
+		if(g_pListPendingCallbacks == NULL) return 0;
+
 		g_IntialTickHappend = true;
 
 		while(g_pListPendingCallbacks->getSize() > 0)

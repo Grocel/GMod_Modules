@@ -192,6 +192,7 @@ int TChannel::LoadFile(const char *sURL, bass_flag eFlags)
 
 	bass_p pLoadedHandle;
 	int iErr;
+
 	BASSFILESYS::PlayFile(sFilename, eFlags, &pLoadedHandle, &iErr);
 
 
@@ -522,7 +523,7 @@ bool TChannel::FFT(bass_flag eMode, float *pfSpectrum)
 	bass_flag iState = BASS_ChannelIsActive(pHandle);
 	if(iState != BASS_ACTIVE_PLAYING && iState != BASS_ACTIVE_PAUSED) return false;
 
-	BASS_ChannelGetData(pHandle, pfSpectrum, eMode | BASS_DATA_FLOAT);
+	BASS_ChannelGetData(pHandle, pfSpectrum, eMode);
 
 	return true;
 }

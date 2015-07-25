@@ -23,6 +23,7 @@ namespace LUAINTERFACE
 
 	void PushVector(lua_State* state, BASS_3DVECTOR* pVector);
 
+	void SetupRealm(lua_State* state);
 	void SetupGlobalTable(lua_State* state);
 	void SetupBASSTable(lua_State* state);
 	void SetupChannelObject(lua_State* state);
