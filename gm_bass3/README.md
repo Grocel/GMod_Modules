@@ -2,20 +2,31 @@
 Binary modules for creating GLua bindings to the [BASS sound API](http://www.un4seen.com/).
 
 ## About
-
 This module will make you able to stream various formats of sound and play them as 3D world sound.
 Getting the FFT spectrum and tag information of a stream is also possible. On the server the sound is always muted.
 So far it is available for Windows and Linux.
 
 ## Todo
-* Add Valve Filesystem support for dedicated servers. Its fine on client/singleplayer/listen server, though. This is a problems I could not fix yet, please help.
 * Support more tags and make the output format nicer to work with.
-* Maybe add EAX Support
+* Maybe add EAX Support.
 * Compile for OSX or find someone doing it for me. I can not find out how to do it properly. I'm not even able to test it as I don't own a Mac or OSX.
 
-## Requirements:
+## Installation
+You put the DLL files for your OS in to the garrysmod/lua/bin/ folder.
+
+## Compiling
+At the first I run the premake script so the project files are generated.
+For windows I compile the code with Visual Studio 2013. For Linux I use gcc/g++ and make on a Linux Mint VirtualBox.
+If you want to compile it yourself you could get some trouble on Linux, because I had to install like a ton of libraries and stuff I don't even remember to make the compiler work properly.
+You need the Source SDK 2013 to compile too.
+
+## Requirements/Problems
 * As it uses c++11 features you may need to install a c++11 runtime library on your operation system.
 * For Linux you may need to install ASIO and give the user that is running the server or the client "rwx" access to the sound device/interface.
+* For servers (especially Linux ones) that do not have sound hardware, you need to install a dummy driver.
+* It could crash on Windows Server while loading, if a sound (dummy) driver or DirectX is missing.
+* For dedicated servers you need to install the [Filesystem Exporter Plugin](https://github.com/Grocel/GMod_Modules/tree/master/filesys_export) to access local and mounted sound files.
+
 
 ## Lua references
 
@@ -130,7 +141,7 @@ Also never pass the numbers directly, as they could be changed too.
 ##### Variables
 | Name                | Value   | Description |
 | ------------------- | ------- | ----------- |
-| BASS3.ModuleVersion | 2       | Version of gm_bass3. |
+| BASS3.ModuleVersion | 4       | Version of gm_bass3. |
 | BASS3.Version       | 2041100 | Version of the BASS sound engine. |
 
 
