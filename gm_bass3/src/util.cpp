@@ -2,9 +2,10 @@
 #include <stdlib.h>
 
 #include <cstring>
+#include <string>
+#include <algorithm>
 #include <thread>
 #include <mutex>
-
 
 #include "util.h"
 #include "classes/tchannel.h"
@@ -74,6 +75,126 @@ void thfnCleanUp()
 
 namespace UTIL
 {
+	namespace STRING
+	{
+		void Trim(string& sString)
+		{
+			string::size_type first = sString.find_first_not_of(" \n\t\r");
+			if(first == string::npos)
+			{
+				sString = string("");
+				return;
+			}
+
+			string::size_type last = sString.find_last_not_of(" \n\t\r");
+			sString = sString.substr( first, last - first + 1);
+		}
+
+		bool GetKeyValueFromSeperator(string &sInput, string &sSeperator, string &sKey, string &sValue)
+		{
+			sKey = "";
+			sValue = "";
+
+			if(sSeperator == "") return false;
+			if(sInput == "") return false;
+
+			size_t posMatch = sInput.find(sSeperator);
+			if(posMatch == string::npos) return false;
+
+			sKey = sInput.substr(0, posMatch);
+			UTIL::STRING::Trim(sKey);
+			if(sKey == "") return false;
+			transform(sKey.begin(), sKey.end(), sKey.begin(), ::tolower);
+
+			sValue = sInput.substr(posMatch + sSeperator.length());
+			UTIL::STRING::Trim(sValue);
+			return true;
+		}
+
+		unsigned int ForEachSegment(string sInput, string &sSeperator, ForEachSegmentFunc func, void *pUserData)
+		{
+			if(sInput == "") return 0;
+			if(sSeperator == "") return 0;
+
+			unsigned int iFound = 0;
+			string sFind = "";
+			sInput += sSeperator;
+			string::size_type posMatch = sInput.find(sSeperator);
+			string::size_type posSeperatorLen = sSeperator.length();
+
+			while(posMatch != string::npos)
+			{
+				sFind = sInput.substr(0, posMatch);
+				sInput = sInput.substr(posMatch + posSeperatorLen);
+				posMatch = sInput.find(sSeperator);
+
+				UTIL::STRING::Trim(sFind);
+				if(sFind == "") continue;
+
+				iFound++;
+				if(func == NULL) continue;
+				if(func == nullptr) continue;
+				iFound--;
+
+				if(!func(sFind, iFound, pUserData)) continue;
+				iFound++;
+			}
+
+			return iFound;
+		}
+
+		bool ToNumber(const char *pString, lua_n &fNumber)
+		{
+			if (pString == NULL) {
+				fNumber = 0;
+				return false;
+			}
+
+			if (pString == nullptr) {
+				fNumber = 0;
+				return false;
+			}
+
+			if (*pString == '\0') {
+				fNumber = 0;
+				return false;
+			}
+
+			char *end = NULL;
+
+			errno = 0;
+			lua_n fOutput = strtod(pString, &end);
+
+			if ((errno == ERANGE && fOutput == DBL_MAX) || fOutput > DBL_MAX) {
+				fNumber = 0;
+				return false;
+			}
+
+			if ((errno == ERANGE && fOutput == DBL_MIN) || fOutput < DBL_MIN) {
+				fNumber = 0;
+				return false;
+			}
+
+			if (*pString == '\0' || *end != '\0') {
+				fNumber = 0;
+				return false;
+			}
+
+			fNumber = fOutput;
+			return true;
+		}
+
+		bool ToNumber(string &sInput, lua_n &fNumber)
+		{
+			if (sInput == "") {
+				fNumber = 0;
+				return false;
+			}
+
+			return ToNumber(sInput.c_str(), fNumber);
+		}
+	}
+
 	size_t safe_cpy(char *d, char const *s, size_t n)
 	{
 		return snprintf(d, n, "%s", s);

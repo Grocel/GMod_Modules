@@ -29,6 +29,35 @@ int Init(lua_State* state)
 	LUAINTERFACE::SetupBASSTable(state);
 	LUAINTERFACE::SetupChannelObject(state);
 
+	try
+	{
+#ifdef _WIN32
+		BASS_SetEAXParameters(EAX_PRESET_GENERIC);
+#endif
+
+		BASS_SetConfig(BASS_CONFIG_MF_VIDEO, TRUE);
+		BASS_SetConfig(BASS_CONFIG_NET_PLAYLIST, 2);
+		BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, TRUE);
+		BASS_SetConfig(BASS_CONFIG_VISTA_TRUEPOS, TRUE);
+		BASS_SetConfig(BASS_CONFIG_OGG_PRESCAN, TRUE);
+
+		BASS_SetConfig(BASS_CONFIG_3DALGORITHM, BASS_3DALG_FULL);
+		BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 8);
+
+		BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 33);
+		BASS_SetConfig(BASS_CONFIG_BUFFER, 500);
+		BASS_SetConfig(BASS_CONFIG_NET_BUFFER, 5000);
+		BASS_SetConfig(BASS_CONFIG_NET_TIMEOUT, 12500);
+		BASS_SetConfig(BASS_CONFIG_NET_READTIMEOUT, 15000);
+		BASS_SetConfig(BASS_CONFIG_VERIFY, 0x8000); // 32 kB
+		BASS_SetConfig(BASS_CONFIG_VERIFY_NET, 0x8000); // 32 kB
+	}
+	catch(...)
+	{
+		LUA->ThrowError("BASS Init failed, exception error: Unknown");
+		return 0;
+	}
+
 	return 0;
 }
 
@@ -153,15 +182,6 @@ GMOD_MODULE_OPEN()
 	{
 		BASS_Stop();
 		BASS_Start();
-
-		BASS_SetConfig(BASS_CONFIG_NET_PLAYLIST, 1);
-
-		BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 1000);
-		BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
-		BASS_SetConfig(BASS_CONFIG_NET_BUFFER, 10000);
-		BASS_SetConfig(BASS_CONFIG_NET_TIMEOUT, 10000);
-		BASS_SetConfig(BASS_CONFIG_NET_READTIMEOUT, 10000);
-		BASS_SetConfig(BASS_CONFIG_VERIFY, 0x8000); // 32 kB
 	}
 	catch(...)
 	{
@@ -206,6 +226,10 @@ GMOD_MODULE_CLOSE()
 		delete [] g_pfFFTBuffer;
 		g_pfFFTBuffer = NULL;
 	}
+
+#ifdef _WIN32
+	BASS_SetEAXParameters(EAX_PRESET_GENERIC);
+#endif
 
 	if(g_SELFLOADED)
 	{

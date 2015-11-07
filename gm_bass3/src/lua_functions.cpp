@@ -6,6 +6,7 @@
 #include "lua.h"
 #include "util.h"
 #include "classes/tchannel.h"
+#include "tag.h"
 
 bass_flag GetPlayFlags(unsigned int iLuaFlag, bool& bNoPlay)
 {
@@ -50,60 +51,46 @@ bass_flag GetPlayFlags(const char* sLuaFlag, bool& bNoPlay)
 	transform(sBuf.begin(), sBuf.end(), sBuf.begin(), ::tolower);
 
 	string sFind = "";
-	size_t posSpace = sBuf.find(" ");
+	string::size_type posMatch = sBuf.find(" ");
 
-	while(posSpace != string::npos)
+	while(posMatch != string::npos)
 	{
-        std::string sFind = sBuf.substr(0, posSpace);
-		sBuf = sBuf.substr(posSpace + 1);
+        sFind = sBuf.substr(0, posMatch);
+		sBuf = sBuf.substr(posMatch + 1);
+		posMatch = sBuf.find(" ");
 
-		if(sFind == "" || sFind == " ")
-		{
-			posSpace = sBuf.find(" ");
-			continue;
-		}
+		if(sFind == "") continue;
+		if(sFind == " ") continue;
 
 		if(g_CLIENT && (sFind == "3d"))
 		{
 			eFlags |= (BASS_SAMPLE_3D | BASS_SAMPLE_MUTEMAX | BASS_SAMPLE_MONO); // 3D needs mono sound
-
-			posSpace = sBuf.find(" ");
 			continue;
 		}
 
 		if(sFind == "loop")
 		{
 			eFlags |= BASS_SAMPLE_LOOP;
-
-			posSpace = sBuf.find(" ");
 			continue;
 		}
 
 		if(sFind == "mono")
 		{
 			eFlags |= BASS_SAMPLE_MONO;
-
-			posSpace = sBuf.find(" ");
 			continue;
 		}
 
 		if(sFind == "noblock")
 		{
 			bNoBlock = true;
-
-			posSpace = sBuf.find(" ");
 			continue;
 		}
 
 		if(sFind == "noplay")
 		{
 			bNoPlay = true;
-
-			posSpace = sBuf.find(" ");
 			continue;
 		}
-
-        posSpace = sBuf.find(" ");
 	}
 
 	if(!bNoBlock)
@@ -225,7 +212,6 @@ namespace LUAFUNC
 
 				LUA->PushBool(UTIL::LoadStream(ThreadArgs, false));
 				return 1;
-				return 1;
 			}
 
 			LUA_FUNCTION(PlayURL)
@@ -270,6 +256,82 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, Type::NUMBER);
 				LUA->PushString(UTIL::DecodeBassError((int)LUA->GetNumber(1)));
+				return 1;
+			}
+
+			LUA_FUNCTION(GetEAX)
+			{
+				DWORD iENV;
+				float fVol;
+				float fDecay;
+				float fDamp;
+
+#ifdef _WIN32
+				if(BASS_GetEAXParameters(&iENV, &fVol, &fDecay, &fDamp) == FALSE)
+				{
+					iENV = BASS_NO_CHANGE;
+					fVol = BASS_NO_CHANGE;
+					fDecay = BASS_NO_CHANGE;
+					fDamp = BASS_NO_CHANGE;
+				}
+#else
+				iENV = BASS_NO_CHANGE;
+				fVol = BASS_NO_CHANGE;
+				fDecay = BASS_NO_CHANGE;
+				fDamp = BASS_NO_CHANGE;
+#endif
+
+				LUA->PushNumber((iENV >= 0xFFFFFFFF || iENV == -1) ? (double)(BASS_NO_CHANGE) : (double)(iENV));
+				LUA->PushNumber(fVol);
+				LUA->PushNumber(fDecay);
+				LUA->PushNumber(fDamp);
+				return 4;
+			}
+
+			LUA_FUNCTION(SetEAX)
+			{
+				DWORD iENV = BASS_NO_CHANGE;
+				float fVol = BASS_NO_CHANGE;
+				float fDecay = BASS_NO_CHANGE;
+				float fDamp = BASS_NO_CHANGE;
+
+				if(!ISNIL(1))
+				{
+					LUA->CheckType(1, Type::NUMBER);
+					iENV = (DWORD)LUA->GetNumber(1);
+				}
+
+				if(!ISNIL(2))
+				{
+					LUA->CheckType(2, Type::NUMBER);
+					fVol = (float)LUA->GetNumber(2);
+
+					if(fVol > 1) fVol = 1;
+					if(fVol < 0) fVol = 0;
+				}
+
+				if(!ISNIL(3))
+				{
+					LUA->CheckType(3, Type::NUMBER);
+					fDecay = (float)LUA->GetNumber(3);
+					if(fDecay > 20) fDecay = 20;
+					if(fDecay < 0.1f) fDecay = 0.1f;
+				}
+
+				if(!ISNIL(4))
+				{
+					LUA->CheckType(4, Type::NUMBER);
+					fDamp = (float)LUA->GetNumber(4);
+
+					if(fDamp > 2) fDecay = 2;
+					if(fDamp < 0) fDecay = 0;
+				}
+
+#ifdef _WIN32
+				LUA->PushBool(BASS_SetEAXParameters(iENV, fVol, fDecay, fDamp) != FALSE);
+#else
+				LUA->PushBool(false);
+#endif
 				return 1;
 			}
 		}
@@ -901,8 +963,6 @@ namespace LUAFUNC
 				unsigned int iLuaFlag = (unsigned int)LUA->GetNumber(2);
 				int iTableRef = 0;
 				const char* pTagData = NULL;
-				const char* pTagDataTemp = NULL;
-				bool bIsStringlist = false;
 
 				if(ISNIL(3))
 				{
@@ -920,202 +980,44 @@ namespace LUAFUNC
 				switch (iLuaFlag)
 				{
 					case LUAENUM_TAG_META:
-					{
-						char cTmp[1024];
-						cTmp[0] = 0;
-						cTmp[1023] = 0;
-
 						pTagData = pChannel->GetTag(BASS_TAG_META);
-						pTagDataTemp = pTagData;
-
-						if (pTagData != NULL)
-						{
-							pTagDataTemp=strstr(pTagData, "StreamTitle='"); // look for title
-							if (pTagDataTemp != NULL)
-							{ // found it, copy it...
-								UTIL::safe_cpy(cTmp, pTagDataTemp + 13, 1024);
-								strchr(cTmp, ';')[-1] = 0;
-							}
-
-							cTmp[1023] = 0;
-							LUA->PushString( "StreamTitle" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-							cTmp[0] = 0;
-
-							pTagDataTemp=strstr(pTagData, "StreamUrl='"); // look for url
-							if (pTagDataTemp != NULL)
-							{ // found it, copy it...
-								UTIL::safe_cpy(cTmp, pTagDataTemp + 11, 1024);
-								strchr(cTmp, ';')[-1] = 0;
-							}
-
-							cTmp[1023] = 0;
-							LUA->PushString( "StreamUrl" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-							cTmp[0] = 0;
-						}
-						else
-						{
-							cTmp[0] = 0;
-							LUA->PushString( "StreamTitle" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-
-							LUA->PushString( "StreamUrl" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-						}
-					}
+						TAG::META(pTagData, state);
 					break;
 
 					case LUAENUM_TAG_ID3:
-					{
 						pTagData = pChannel->GetTag(BASS_TAG_ID3);
-						pTagDataTemp = pTagData;
-
-						const TAG_ID3* pTagID3 = (const TAG_ID3*)pTagData;
-
-						char cTmp[64];
-						cTmp[0] = 0;
-						cTmp[63] = 0;
-
-
-						if (pTagID3 != NULL)
-						{
-							LUA->PushString( "id" ); 
-							LUA->PushNumber( atoi(pTagID3->id) );
-							LUA->SetTable( -3 );
-
-							LUA->PushString( "year" ); 
-							LUA->PushNumber( atoi(pTagID3->year) );
-							LUA->SetTable( -3 );
-
-							LUA->PushString( "genre" ); 
-							LUA->PushNumber( pTagID3->genre );
-							LUA->SetTable( -3 );
-
-							UTIL::safe_cpy(cTmp, pTagID3->title, 64);
-							cTmp[63] = 0;
-							LUA->PushString( "title" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-							cTmp[0];
-
-							UTIL::safe_cpy(cTmp, pTagID3->artist, 64);
-							cTmp[63] = 0;
-							LUA->PushString( "artist" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-							cTmp[0];
-
-							UTIL::safe_cpy(cTmp, pTagID3->album, 64);
-							cTmp[63] = 0;
-							LUA->PushString( "album" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-							cTmp[0];
-
-
-							UTIL::safe_cpy(cTmp, pTagID3->comment, 64);
-							cTmp[63] = 0;
-							LUA->PushString( "comment" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-							cTmp[0];
-						}
-						else
-						{
-							cTmp[0] = 0;
-
-							LUA->PushString( "id" ); 
-							LUA->PushNumber( 0 );
-							LUA->SetTable( -3 );
-
-							LUA->PushString( "year" ); 
-							LUA->PushNumber( 0 );
-							LUA->SetTable( -3 );
-
-							LUA->PushString( "genre" ); 
-							LUA->PushNumber( 0 );
-							LUA->SetTable( -3 );
-
-							LUA->PushString( "title" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-
-							LUA->PushString( "artist" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-
-							LUA->PushString( "album" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-
-							LUA->PushString( "comment" ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-						}
-					}
+						TAG::ID3(pTagData, state);
 					break;
 
 					case LUAENUM_TAG_HTTP:
 						pTagData = pChannel->GetTag(BASS_TAG_HTTP);
-						bIsStringlist = true;
+						TAG::HTTP(pTagData, state);
 					break;
 
 					case LUAENUM_TAG_ICY:
 						pTagData = pChannel->GetTag(BASS_TAG_ICY);
-						bIsStringlist = true;
+						TAG::ICY(pTagData, state);
 					break;
 
 					case LUAENUM_TAG_MF:
 						pTagData = pChannel->GetTag(BASS_TAG_MF);
-						bIsStringlist = true;
+						TAG::MF(pTagData, state);
 					break;
 
 					case LUAENUM_TAG_MP4:
 						pTagData = pChannel->GetTag(BASS_TAG_MP4);
-						bIsStringlist = true;
+						TAG::MP4(pTagData, state);
 					break;
 
 					case LUAENUM_TAG_APE:
 						pTagData = pChannel->GetTag(BASS_TAG_APE);
-						bIsStringlist = true;
+						TAG::APE(pTagData, state);
 					break;
 
 					case LUAENUM_TAG_OGG:
 						pTagData = pChannel->GetTag(BASS_TAG_OGG);
-						bIsStringlist = true;
+						TAG::OGG(pTagData, state);
 					break;
-				}
-
-				pTagDataTemp = pTagData;
-				if(bIsStringlist)
-				{
-					if (pTagDataTemp != NULL)
-					{
-						unsigned int i = 0;
-						char cTmp[1024];
-						cTmp[0] = 0;
-						cTmp[1023] = 0;
-
-						// Getting a list of null-terminated strings
-						while (*pTagDataTemp)
-						{
-							i++;
-							UTIL::safe_cpy(cTmp, pTagDataTemp, 1024);
-
-							cTmp[1023] = 0;
-							LUA->PushNumber( i ); 
-							LUA->PushString( cTmp );
-							LUA->SetTable( -3 );
-							cTmp[0];
-
-							pTagDataTemp += strlen(pTagDataTemp) + 1; // move on to next string
-						}
-					}
 				}
 				LUA->Pop();
 
@@ -1319,24 +1221,16 @@ namespace LUAFUNC
 				TChannel* pChannel = GETCHANNEL(1);
 				if(pChannel == NULL) return 0;
 
-				float fMin;
-				float fMax;
+				float fMin = BASS_NO_CHANGE;
+				float fMax = BASS_NO_CHANGE;
 
-				if(ISNIL(2))
-				{
-					fMin = -1;
-				}
-				else
+				if(!ISNIL(2))
 				{
 					LUA->CheckType(2, Type::NUMBER);				
 					fMin = (float)LUA->GetNumber(2);
 				}
 
-				if(ISNIL(3))
-				{
-					fMax = -1;
-				}
-				else
+				if(!ISNIL(3))
 				{
 					LUA->CheckType(3, Type::NUMBER);				
 					fMax = (float)LUA->GetNumber(3);
@@ -1377,41 +1271,58 @@ namespace LUAFUNC
 				TChannel* pChannel = GETCHANNEL(1);
 				if(pChannel == NULL) return 0;
 
-				DWORD iInnerAngle;
-				DWORD iOuterAngle;
-				float fOuterVolume;
+				DWORD iInnerAngle = BASS_NO_CHANGE;
+				DWORD iOuterAngle = BASS_NO_CHANGE;
+				float fOuterVolume = BASS_NO_CHANGE;
 
-				if(ISNIL(2))
-				{
-					iInnerAngle = -1;
-				}
-				else
+				if(!ISNIL(2))
 				{
 					LUA->CheckType(2, Type::NUMBER);				
 					iInnerAngle = (DWORD)LUA->GetNumber(2);
 				}
 
-				if(ISNIL(3))
-				{
-					iOuterAngle = -1;
-				}
-				else
+				if(!ISNIL(3))
 				{
 					LUA->CheckType(3, Type::NUMBER);				
 					iOuterAngle = (DWORD)LUA->GetNumber(3);
 				}
 
-				if(ISNIL(4))
-				{
-					fOuterVolume = -1;
-				}
-				else
+				if(!ISNIL(4))
 				{
 					LUA->CheckType(4, Type::NUMBER);				
 					fOuterVolume = (float)LUA->GetNumber(4);
 				}
 
 				pChannel->Set3DCone(iInnerAngle, iOuterAngle, fOuterVolume);
+				return 0;
+			}
+
+			LUA_FUNCTION(GetEAXmix)
+			{
+				LUA->CheckType(1, TYPE_CHANNEL);
+				TChannel* pChannel = GETCHANNEL(1);
+				if(pChannel == NULL) return 0;
+
+				float iMix = pChannel->GetEAXMix();
+				LUA->PushNumber(iMix);
+				return 1;
+			}
+
+			LUA_FUNCTION(SetEAXmix)
+			{
+				LUA->CheckType(1, TYPE_CHANNEL);
+				TChannel* pChannel = GETCHANNEL(1);
+				if(pChannel == NULL) return 0;
+
+				float iMix = BASS_AUTO;
+
+				if(!ISNIL(2))
+				{
+					LUA->CheckType(2, Type::NUMBER);				
+					iMix = (float)LUA->GetNumber(2);
+				}
+
+				pChannel->SetEAXMix(iMix);
 				return 0;
 			}
 		}

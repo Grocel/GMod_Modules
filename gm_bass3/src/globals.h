@@ -21,11 +21,12 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#define GM_BASS_VERSION 4
+#define GM_BASS_VERSION 5
 
 #define ENUM_TO_VALUE(ENUM, VALUE, VAR) case ENUM: VAR = VALUE; break
 
 #define BASS_NO_CHANGE -1
+#define BASS_AUTO -1
 #define BASS_NULL 0
 
 #define META_CHANNEL "IBASS3Channel"

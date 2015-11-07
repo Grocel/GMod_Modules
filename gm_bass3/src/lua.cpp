@@ -199,6 +199,12 @@ namespace LUAINTERFACE
 			ADDTABFUNC(BASS3, PlayURL);
 			ADDTABFUNC(BASS3, CreateChannel);
 			ADDTABFUNC(BASS3, DecodeError);
+
+			if(g_CLIENT)
+			{
+				ADDTABFUNC(BASS3, GetEAX);
+				ADDTABFUNC(BASS3, SetEAX);
+			}
 		iTabBassRef = LUA->ReferenceCreate();
 
 		// Add BASS3 to _G
@@ -288,6 +294,9 @@ namespace LUAINTERFACE
 
 				ADDMETHOD(IBASS3Channel, Get3DCone);
 				ADDMETHOD(IBASS3Channel, Set3DCone);
+
+				ADDMETHOD(IBASS3Channel, GetEAXmix);
+				ADDMETHOD(IBASS3Channel, SetEAXmix);
 			}
 		iTabChannelRef = LUA->ReferenceCreate();
 

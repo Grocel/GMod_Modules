@@ -95,6 +95,7 @@ void TChannel::Reset3D()
 
 	BASS_ChannelSet3DAttributes(pHandle, BASS_3DMODE_NORMAL, 200, 1000000000, 360, 360, 0);
 	BASS_ChannelSet3DPosition(pHandle, &vNullpos, &vNullpos, &vNullpos);
+	BASS_ChannelSetAttribute(pHandle, BASS_ATTRIB_EAXMIX, BASS_AUTO);
 	BASS_Apply3D();
 }
 
@@ -773,9 +774,7 @@ bool TChannel::GetPos(BASS_3DVECTOR* pvPos, BASS_3DVECTOR* pvDir, BASS_3DVECTOR*
 	lock_guard<mutex> Lock(MutexLock);
 
 	if(!Is3DInternal()) return false;
-	BASS_ChannelGet3DPosition(pHandle, pvPos, pvDir, pvVel);
-
-	return true;
+	return BASS_ChannelGet3DPosition(pHandle, pvPos, pvDir, pvVel) == TRUE;
 }
 
 bool TChannel::SetPos(BASS_3DVECTOR* pvPos, BASS_3DVECTOR* pvDir, BASS_3DVECTOR* pvVel)
@@ -816,9 +815,7 @@ bool TChannel::Get3DFadeDistance( float* pfMin, float* pfMax )
 	lock_guard<mutex> Lock(MutexLock);
 
 	if(!Is3DInternal()) return false;
-	BASS_ChannelGet3DAttributes(pHandle, NULL, pfMin, pfMax, NULL, NULL, NULL);
-
-	return true;
+	return BASS_ChannelGet3DAttributes(pHandle, NULL, pfMin, pfMax, NULL, NULL, NULL) == TRUE;
 }
 
 void TChannel::Set3DFadeDistance( float fMin, float fMax ) 
@@ -845,9 +842,7 @@ bool TChannel::Get3DCone( DWORD* piInnerAngle, DWORD* piOuterAngle, float* pfOut
 	lock_guard<mutex> Lock(MutexLock);
 
 	if(!Is3DInternal()) return false;
-	BASS_ChannelGet3DAttributes(pHandle, NULL, NULL, NULL, piInnerAngle, piOuterAngle, pfOuterVolume);
-
-	return true;
+	return BASS_ChannelGet3DAttributes(pHandle, NULL, NULL, NULL, piInnerAngle, piOuterAngle, pfOuterVolume) == TRUE;
 }
 
 void TChannel::Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle, float fOuterVolume ) 
@@ -869,4 +864,28 @@ void TChannel::Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle )
 	Set3DCone( iInnerAngle, iOuterAngle, BASS_NO_CHANGE );
 }
 
+float TChannel::GetEAXMix()
+{
+	lock_guard<mutex> Lock(MutexLock);
 
+	float fMix = -1;
+	if(!Is3DInternal()) return fMix;
+
+	if(BASS_ChannelGetAttribute(pHandle, BASS_ATTRIB_EAXMIX, &fMix) == FALSE)
+	{
+		fMix = -1;
+	}
+
+	return fMix;
+}
+
+void TChannel::SetEAXMix(float fMix)
+{
+	lock_guard<mutex> Lock(MutexLock);
+	if(!Is3DInternal()) return;
+
+	if ((fMix < 0) && (fMix != BASS_AUTO)) fMix = 0;
+	if (fMix > 1) fMix = 1;
+
+	BASS_ChannelSetAttribute(pHandle, BASS_ATTRIB_EAXMIX, fMix);
+}

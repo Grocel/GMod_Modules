@@ -58,6 +58,8 @@ namespace LUAFUNC
 			LUA_FUNCTION(PlayURL);
 			LUA_FUNCTION(CreateChannel);
 			LUA_FUNCTION(DecodeError);
+			LUA_FUNCTION(GetEAX);
+			LUA_FUNCTION(SetEAX);
 		}
 	}
 
@@ -124,6 +126,9 @@ namespace LUAFUNC
 
 			LUA_FUNCTION(Get3DCone);
 			LUA_FUNCTION(Set3DCone);
+
+			LUA_FUNCTION(GetEAXmix);
+			LUA_FUNCTION(SetEAXmix);
 		}
 	}
 }
