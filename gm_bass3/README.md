@@ -6,10 +6,6 @@ This module will make you able to stream various formats of sound and play them 
 Getting the FFT spectrum and tag information of a stream is also possible. On the server the sound is always muted.
 So far it is available for Windows and Linux.
 
-## Todo
-* Fix EAX Support.
-* Compile for OSX or find someone doing it for me. I can not find out how to do it properly. I'm not even able to test it as I don't own a Mac or OSX.
-
 ## Installation
 You put the DLL files for your OS in to the garrysmod/lua/bin/ folder.
 
