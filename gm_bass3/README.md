@@ -7,8 +7,7 @@ Getting the FFT spectrum and tag information of a stream is also possible. On th
 So far it is available for Windows and Linux.
 
 ## Todo
-* Support more tags and make the output format nicer to work with.
-* Maybe add EAX Support.
+* Fix EAX Support.
 * Compile for OSX or find someone doing it for me. I can not find out how to do it properly. I'm not even able to test it as I don't own a Mac or OSX.
 
 ## Installation
