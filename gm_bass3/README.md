@@ -130,18 +130,20 @@ Also never pass the numbers directly, as they could be changed too.
 #### BASS3
 
 ##### Functions
-| Name                  | Arguments                                                                             | Returned values           | Description |
-| --------------------- | ------------------------------------------------------------------------------------- | ------------------------- | ----------- |
-| BASS3.CreateChannel() | ``nil``                                                                               | ``IBASS3Channel Channel`` | Creates an empty IBASS3Channel object. |
-| BASS3.DecodeError()   | ``number Errorcode``                                                                  | ``string Errorstring``    | Returns the description of the given errorcode. |
-| BASS3.PlayFile()      | ``string Path``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``function Callback`` | ``bool Success``          | Play a local file at the given path relative to the garrysmod content folder.<br><br>The Flags argument accepts a string as like as sound.PlayFile() does and the *recommend* MODE_\*-Enums.<br><br>The Callback is called after the loading is done.<br>Its aguments are:<br>``IBASS3Channel Channel``<br>``number Errorcode``<br>``string Errorstring``<br><br>Returns true when the loading process was successfully started. |
-| BASS3.PlayURL()       | ``string URL``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``function Callback``  | ``bool Success``          | Play an online file or stream at the given URL.<br><br>Basically it works as same as BASS3.PlayFile(). |
+| Name                  | Arguments                                                                                      | Returned values                                                         | Description |
+| --------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------| ----------- |
+| BASS3.CreateChannel() | ``nil``                                                                                        | ``IBASS3Channel Channel``                                               | Creates an empty IBASS3Channel object. |
+| BASS3.DecodeError()   | ``number Errorcode``                                                                           | ``string Errorstring``                                                  | Returns the description of the given errorcode. |
+| BASS3.PlayFile()      | ``string Path``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``function Callback``          | ``bool Success``                                                        | Play a local file at the given path relative to the garrysmod content folder.<br><br>The Flags argument accepts a string as like as sound.PlayFile() does and the *recommend* MODE_\*-Enums.<br><br>The Callback is called after the loading is done.<br>Its aguments are:<br>``IBASS3Channel Channel``<br>``number Errorcode``<br>``string Errorstring``<br><br>Returns true when the loading process was successfully started. |
+| BASS3.PlayURL()       | ``string URL``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``function Callback``           | ``bool Success``                                                        | Play an online file or stream at the given URL.<br><br>Basically it works as same as BASS3.PlayFile(). |
+| BASS3.GetEAX()        | ``nil``                                                                                        | ``number ENV``<br><br>``number Volume``<br><br>``number Decay``<br><br>``number Damp`` | **Clientside, Broken/WIP**<br><br>Returns the values of the current EAX effect. |
+| BASS3.SetEAX()        | ``[number ENV]``<br><br>``[number Volume]``<br><br>``[number Decay]``<br><br>``[number Damp]`` | ``bool Success``                                                        | **Clientside, Broken/WIP**<br><br>Applies an EAX effect to all BASS sounds.<br>Unfilled arguments will not be changed.<br><br>Only has an effect on 3D channels.<br>Returns true on success.<br><br>Also see:<br>[BASS_SetEAXParameters()](http://www.un4seen.com/doc/#bass/BASS_SetEAXParameters.html)<br>[BASS_ATTRIB_EAXMIX](http://www.un4seen.com/doc/#bass/BASS_ATTRIB_EAXMIX.html) |
 
 
 ##### Variables
 | Name                | Value   | Description |
 | ------------------- | ------- | ----------- |
-| BASS3.ModuleVersion | 4       | Version of gm_bass3. |
+| BASS3.ModuleVersion | 5       | Version of gm_bass3. |
 | BASS3.Version       | 2041100 | Version of the BASS sound engine. |
 
 
@@ -164,6 +166,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:Get3DFadeDistance() | ``nil`` | ``float Min``<br><br>``float Max``                        | **Clientside**<br><br>Returns 3D fade distances of a sound channel. |
 | IBASS3Channel:GetBalance()        | ``nil``                                  | ``float Balance``        | Returns the current sound balance. |
 | IBASS3Channel:GetBitsPerSample()  | ``nil``                                  | ``number Bits``          | Returns the bit count per sample. |
+| IBASS3Channel:GetEAXMix()         | ``nil``                                  | ``float DryWetRatio``    | **Clientside, Broken/WIP**<br><br>Returns the Dry/Wet ratio in the EAXmix. |
 | IBASS3Channel:GetFileFormat()     | ``nil``                                  | ``string Fileformat``    | Returns the format of the stream. Ex: "MP3", "WAV" |
 | IBASS3Channel:GetFileName()       | ``nil``                                  | ``string Filename``      | Returns the URL or Path of the stream. |
 | IBASS3Channel:GetLength()         | ``nil``                                  | ``float Length``         | Returns the length of the streamed file in seconds.<br><br>Results less then zero are indicating an endless stream. |
@@ -187,6 +190,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:Set3DCone()         | ``float InnerAngle = -1``<br><br>``float OuterAngle = -1``<br><br>``float OuterVolume = -1`` | ``nil`` | **Clientside**<br><br>Sets 3D cone of the sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
 | IBASS3Channel:Set3DFadeDistance() | ``float Min = -1``<br><br>``float Max = -1``       | ``nil``        | **Clientside**<br><br>Sets 3D fade distances of a sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
 | IBASS3Channel:SetBalance()        | ``float Balance``                        | ``nil``                  | **Clientside**<br><br>Set the sound balance to the given value.<br><br>Balance values:<br>-1 = Left<br>0 = Center<br>1 = Right |
+| IBASS3Channel:SetEAXMix()         | ``float DryWetRatio``                    | ``nil``                  | **Clientside, Broken/WIP**<br><br>Returns the Dry/Wet ratio in the EAXmix. Nil or -1 resets it to automatic mixing. |
 | IBASS3Channel:SetPos()            | ``Vector Position = Vector(0,0,0)``<br><br>``Vector Direction = Vector(0,0,0)``<br><br>``Vector Velocity = Vector(0,0,0)`` | ``nil`` | **Clientside**<br><br>Sets the position, direction and velocity of sound channel in case the channel has a 3d option set. |
 | IBASS3Channel:SetTime()           | ``float TimePos``                        | ``nil``                  | Set the time position to the given value.<br><br>It seeks to the position, so the position not set immediately. |
 | IBASS3Channel:SetVolume()         | ``float Volume``                         | ``nil``                  | **Clientside**<br><br>Set the volume to the given value.<br><br>Volume values:<br>0 = Muted<br>1 = Full volume |
