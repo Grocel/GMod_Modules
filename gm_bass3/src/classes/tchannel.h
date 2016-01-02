@@ -105,6 +105,10 @@ public:
 	bool FFT(bass_flag eMode, float *pfSpectrum);
 	bool GetLevel(WORD* piLevelLeft, WORD* piLevelRight);
 
+	bool GetLevelEx(float* pfLevels);
+	bool GetLevelEx(float* pfLevels, float fTimeFrame);
+	bool GetLevelEx(float* pfLevels, float fTimeFrame, bool bRMS);
+
 	double GetTime();
 
 	void SetTime(double fTime);

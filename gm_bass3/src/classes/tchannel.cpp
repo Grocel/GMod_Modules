@@ -546,6 +546,31 @@ bool TChannel::GetLevel(WORD* piLevelLeft, WORD* piLevelRight)
 	return true;
 }
 
+bool TChannel::GetLevelEx(float* pfLevels)
+{
+	return GetLevelEx(pfLevels, 0.02, false);
+}
+
+bool TChannel::GetLevelEx(float* pfLevels, float fTimeFrame)
+{
+	return GetLevelEx(pfLevels, fTimeFrame, false);
+}
+
+bool TChannel::GetLevelEx(float* pfLevels, float fTimeFrame, bool bRMS)
+{
+	lock_guard<mutex> Lock(MutexLock);
+	if(pfLevels == NULL) return false;
+
+	if(!IsValidInternal()) return false;
+	bass_flag iState = BASS_ChannelIsActive(pHandle);
+	if(iState != BASS_ACTIVE_PLAYING && iState != BASS_ACTIVE_PAUSED) return false;
+
+	if(fTimeFrame < 0.001) fTimeFrame = 0.001;
+	if(fTimeFrame > 1) fTimeFrame = 1;
+
+	return (BASS_ChannelGetLevelEx(pHandle, pfLevels, fTimeFrame, BASS_LEVEL_STEREO | (bRMS ? BASS_LEVEL_RMS : 0)) == TRUE);
+}
+
 double TChannel::GetTime()
 {
 	lock_guard<mutex> Lock(MutexLock);

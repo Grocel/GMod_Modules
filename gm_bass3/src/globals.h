@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <exception>
 #include <stdexcept>
+#include <math.h>
 
 // Compiling with Source SDK 2013 for Linux/OSX? Don't forget this:
 #include "steam/steamtypes.h"
@@ -21,13 +22,14 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#define GM_BASS_VERSION 5
+#define GM_BASS_VERSION 6
 
 #define ENUM_TO_VALUE(ENUM, VALUE, VAR) case ENUM: VAR = VALUE; break
 
 #define BASS_NO_CHANGE -1
 #define BASS_AUTO -1
 #define BASS_NULL 0
+#define BASS_MIN_DECIBELS -1000
 
 #define META_CHANNEL "IBASS3Channel"
 #define TYPE_CHANNEL 66

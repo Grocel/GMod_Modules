@@ -5,6 +5,7 @@
 #include <mutex>
 #include <exception>
 #include <stdexcept>
+#include <math.h>
 
 #include "list.h"
 #include "globals.h"

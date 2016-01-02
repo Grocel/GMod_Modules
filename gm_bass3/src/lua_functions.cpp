@@ -686,6 +686,7 @@ namespace LUAFUNC
 
 				bool bRemoveDCbias = false;
 				bool bRemoveHannWindow = false;
+				bool bToDecibel = false;
 
 				if(!ISNIL(4))
 				{
@@ -697,6 +698,12 @@ namespace LUAFUNC
 				{
 					LUA->CheckType(5, Type::BOOL);
 					bRemoveHannWindow = LUA->GetBool(5);
+				}
+
+				if(!ISNIL(6))
+				{
+					LUA->CheckType(6, Type::BOOL);
+					bToDecibel = LUA->GetBool(6);
 				}
 
 				TChannel* pChannel = GETCHANNEL(1);
@@ -739,28 +746,60 @@ namespace LUAFUNC
 				LUA->ReferencePush( iTableRef );
 				if(!pChannel->FFT(iFlag, g_pfFFTBuffer))
 				{
-					for (i = 0; i < iCount; i += iSkip)
+					if(bToDecibel)
 					{
-						LUA->PushNumber( iIndex ); 
-						LUA->PushNumber( 0 );
-						LUA->SetTable( -3 );					
+						for (i = 0; i < iCount; i += iSkip)
+						{
+							LUA->PushNumber( iIndex ); 
+							LUA->PushNumber( BASS_MIN_DECIBELS );
+							LUA->SetTable( -3 );					
 
-						iIndex++;
+							iIndex++;
+						}
 					}
+					else
+					{
+						for (i = 0; i < iCount; i += iSkip)
+						{
+							LUA->PushNumber( iIndex ); 
+							LUA->PushNumber( 0 );
+							LUA->SetTable( -3 );					
+
+							iIndex++;
+						}
+					}					
 				}
 				else
 				{
-					for (i = 0; i < iCount; i += iSkip)
+					if(bToDecibel)
 					{
-						fTmp = g_pfFFTBuffer[i];
-						if(fTmp < 0) fTmp = 0;
-						if(fTmp > 1) fTmp = 1;
+						for (i = 0; i < iCount; i += iSkip)
+						{
+							fTmp = g_pfFFTBuffer[i];
+							fTmp = ((fTmp > 0) ? 20 * log10(fTmp) : BASS_MIN_DECIBELS);
+							if(fTmp < BASS_MIN_DECIBELS) fTmp = BASS_MIN_DECIBELS;
 
-						LUA->PushNumber( iIndex ); 
-						LUA->PushNumber( fTmp );
-						LUA->SetTable( -3 );
+							LUA->PushNumber( iIndex ); 
+							LUA->PushNumber( fTmp );
+							LUA->SetTable( -3 );
 
-						iIndex++;
+							iIndex++;
+						}
+					}
+					else
+					{
+						for (i = 0; i < iCount; i += iSkip)
+						{
+							fTmp = g_pfFFTBuffer[i];
+							if(fTmp < 0) fTmp = 0;
+							if(fTmp > 1) fTmp = 1;
+
+							LUA->PushNumber( iIndex ); 
+							LUA->PushNumber( fTmp );
+							LUA->SetTable( -3 );
+
+							iIndex++;
+						}
 					}
 				}
 				LUA->Pop();
@@ -886,16 +925,77 @@ namespace LUAFUNC
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
 				if(pChannel == NULL) return 0;
-				
-				WORD iLevelLeft = 0;
-				WORD iLevelRight = 0;
-				pChannel->GetLevel(&iLevelLeft, &iLevelRight);
 
-				LUA->PushNumber((double)(iLevelLeft) / 0x7FFF);
-				LUA->PushNumber((double)(iLevelRight) / 0x7FFF);
+				bool bRMS = false;
+				bool bToDecibel = false;
+				float fTimeFrame = 0.02;
+
+				if(!ISNIL(2))
+				{
+					LUA->CheckType(2, Type::NUMBER);
+					fTimeFrame = (float)LUA->GetNumber(2);
+				}
+
+				if(!ISNIL(3))
+				{
+					LUA->CheckType(3, Type::BOOL);
+					bRMS = LUA->GetBool(4);
+				}
+
+				if(!ISNIL(4))
+				{
+					LUA->CheckType(4, Type::BOOL);
+					bToDecibel = LUA->GetBool(4);
+				}
+
+				float fTmp;
+				unsigned int i;
+
+				if(!pChannel->GetLevelEx(g_pfFFTBuffer, fTimeFrame, bRMS))
+				{
+					if(bToDecibel)
+					{
+						for (i = 0; i < 2; i++)
+						{
+							LUA->PushNumber(BASS_MIN_DECIBELS);
+						}
+					}
+					else
+					{
+						for (i = 0; i < 2; i++)
+						{
+							LUA->PushNumber(0);
+						}
+					}
+				}
+				else
+				{
+					if(bToDecibel)
+					{
+						for (i = 0; i < 2; i++)
+						{
+							fTmp = g_pfFFTBuffer[i];
+							fTmp = ((fTmp > 0) ? 20 * log10(fTmp) : BASS_MIN_DECIBELS);
+							if(fTmp < BASS_MIN_DECIBELS) fTmp = BASS_MIN_DECIBELS;
+
+							LUA->PushNumber(fTmp);
+						}
+					}
+					else
+					{
+						for (i = 0; i < 2; i++)
+						{
+							fTmp = g_pfFFTBuffer[i];
+							if(fTmp < 0) fTmp = 0;
+							if(fTmp > 1) fTmp = 1;
+
+							LUA->PushNumber(fTmp);
+						}
+					}
+				}
+
 				return 2;
 			}
-
 
 			LUA_FUNCTION(GetTime)
 			{
