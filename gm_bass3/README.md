@@ -17,7 +17,7 @@ You need the Source SDK 2013 to compile too.
 
 ## Requirements/Problems
 * Make sure your game and your server is up to date.
-* You maybe need to manually replace the bass.dll or libbass.so on the server with the latest versions of them. It is located at your_gmodserver/bin/. Only do it if it does not work otherwise.
+* Maybe you need to manually replace the bass.dll or libbass.so on the server with the latest versions of them. It is located at your_gmodserver/bin/. Only do it if it does not work otherwise.
 * As it uses c++11 features you may need to install a c++11 runtime library on your operation system.
 * For Linux you may need to install ASIO and give the user that is running the server or the client "rwx" access to the sound device/interface.
 * For servers (especially Linux ones) that do not have sound hardware, you need to install a dummy driver.
