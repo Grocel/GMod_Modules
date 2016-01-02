@@ -11,11 +11,13 @@ You put the DLL files for your OS in to the garrysmod/lua/bin/ folder.
 
 ## Compiling
 At the first I run the premake script so the project files are generated.
-For windows I compile the code with Visual Studio 2013. For Linux I use gcc/g++ and make on a Linux Mint VirtualBox.
+For windows I compile the code with Visual Studio 2013. For Linux I use 'gcc/g++'' and 'make' on a Linux Mint VirtualBox.
 If you want to compile it yourself you could get some trouble on Linux, because I had to install like a ton of libraries and stuff I don't even remember to make the compiler work properly.
 You need the Source SDK 2013 to compile too.
 
 ## Requirements/Problems
+* Make sure your game and your server is up to date.
+* You may need to manually replace the bass.dll or libbass.so on the server with the latest versions of them. It is located at <gmodserver>/bin/.
 * As it uses c++11 features you may need to install a c++11 runtime library on your operation system.
 * For Linux you may need to install ASIO and give the user that is running the server or the client "rwx" access to the sound device/interface.
 * For servers (especially Linux ones) that do not have sound hardware, you need to install a dummy driver.
@@ -26,7 +28,7 @@ You need the Source SDK 2013 to compile too.
 ## Lua references
 
 #### Enumerations
-This is a list of all enumerations. They are defined to match these of GMod to make migration easier. 
+This is a list of all enumerations. They are designed to match these of GMod to make migration easier.
 
 However you should prefer to only use ``BASS3.ENUM.*`` for BASS3 related functions as the GMod ones could be changed anytime.
 Also never pass the numbers directly, as they could be changed too.
@@ -138,7 +140,7 @@ Also never pass the numbers directly, as they could be changed too.
 ##### Variables
 | Name                | Value   | Description |
 | ------------------- | ------- | ----------- |
-| BASS3.ModuleVersion | 5       | Version of gm_bass3. |
+| BASS3.ModuleVersion | 6       | Version of gm_bass3. |
 | BASS3.Version       | 2041100 | Version of the BASS sound engine. |
 
 
@@ -155,8 +157,8 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:BalanceFadeTo()     | ``float Balance``<br><br>``float time``  | ``nil``                  | **Clientside**<br><br>Fade the sound balance to the given value for the given time in secounds. |
 | IBASS3Channel:BalanceIsFading()   | ``nil``                                  | ``bool Fading``          | **Clientside**<br><br>Returns true if the sound balance is fading. |
 | IBASS3Channel:EnableLooping()     | ``nil``                                  | ``bool Loop``            | Enable or disable Looping. |
-| IBASS3Channel:FFT()               | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false`` | ``number Count`` | It fills the given table with the first half of the current FFT spectrum.<br><br>The values are ranging from 0 to 1.<br>The FFT_*-Enum defines the size of the data. The data size is returned.<br><br>Also see:<br>[IGModAudioChannel:FFT](http://wiki.garrysmod.com/page/IGModAudioChannel/FFT)<br>[BASS_ChannelGetData()](http://www.un4seen.com/doc/#bass/BASS_ChannelGetData.html) |
-| IBASS3Channel:FFTComplex()        | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false`` | ``number Count`` | Similar to BASS3Channel:FFT(), but with different more complete data.<br><br>The given table is filled with complex numbers.<br><br>The real parts are in uneven indexes, while the imaginary parts are in even indexes.<br>So the first index is the real part of the first complex number.<br><br>All values are between from -1 and 1. |
+| IBASS3Channel:FFT()               | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false``<br><br>``bool AsDecibel = false`` | ``number Count`` | It fills the given table with the first half of the current FFT spectrum.<br>Returned values: 0 ... 1<br>OR<br>Values: -1000 ... 0 db<br>The FFT_*-Enum defines the size of the data. The data size is returned.<br><br>The values are returned as decibel figures if AsDecibel is true.<br><br>Also see:<br>[IGModAudioChannel:FFT](http://wiki.garrysmod.com/page/IGModAudioChannel/FFT)<br>[BASS_ChannelGetData()](http://www.un4seen.com/doc/#bass/BASS_ChannelGetData.html) |
+| IBASS3Channel:FFTComplex()        | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false`` | ``number Count`` | Similar to BASS3Channel:FFT(), but with different more complete data.<br><br>The given table is filled with complex numbers.<br><br>The real parts are in uneven indexes, while the imaginary parts are in even indexes.<br>So the first index is the real part of the first complex number.<br><br>Returned values: -1 ... 1 |
 | IBASS3Channel:Get3DCone()         | ``nil`` | ``float InnerAngle``<br><br>``float OuterAngle``<br><br>``float OuterVolume`` | **Clientside**<br><br>Returns 3D cone of the sound channel. |
 | IBASS3Channel:Get3DFadeDistance() | ``nil`` | ``float Min``<br><br>``float Max``                        | **Clientside**<br><br>Returns 3D fade distances of a sound channel. |
 | IBASS3Channel:GetBalance()        | ``nil``                                  | ``float Balance``        | Returns the current sound balance. |
@@ -165,7 +167,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:GetFileFormat()     | ``nil``                                  | ``string Fileformat``    | Returns the format of the stream. Ex: "MP3", "WAV" |
 | IBASS3Channel:GetFileName()       | ``nil``                                  | ``string Filename``      | Returns the URL or Path of the stream. |
 | IBASS3Channel:GetLength()         | ``nil``                                  | ``float Length``         | Returns the length of the streamed file in seconds.<br><br>Results less then zero are indicating an endless stream. |
-| IBASS3Channel:GetLevel()          | ``nil``                                  | ``float Left``<br><br>``float Right`` | Returns the sound levels. |
+| IBASS3Channel:GetLevel()          | ``float TimeFrame = 0.02``<br><br>``bool RMS = false``<br><br>``bool AsDecibel = false`` | ``float Left``<br><br>``float Right`` | Returns the sound levels.<br>Returned values: 0 ... 1<br>OR<br>Values: -1000 ... 0 db<br><br>The time frame value definites how much data to inspect to calculate the level.<br>Max: 1, Min: 0.001<br><br>If RMS is true, it will return the RMS instead of the peak levels.<br><br>The values are returned as decibel figures if AsDecibel is true. |
 | IBASS3Channel:GetPos()            | ``[Vector Position]``<br><br>``[Vector Direction]``<br><br>``[Vector Velocity]`` | ``Vector Position``<br><br>``Vector Direction``<br><br>``Vector Velocity`` | **Clientside**<br><br>Returns position, direction and velocity of the channel.<br><br>If you put vectors into the optional arguments, the function will change and return the given ones instead of creating new ones. Useful for recycling. |
 | IBASS3Channel:GetSamplingRate()   | ``nil``                                  | ``number Frequency``     | Returns the sampling rate.<br>Usually it is 44100 Hz. |
 | IBASS3Channel:GetState()          | ``nil``                                  | ``CHANNEL_*-Enum State`` | Returns the channel state.<br><br>See the CHANNEL_* table. |
@@ -224,14 +226,14 @@ BASS3.PlayURL(url, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_NOBLOCK), funct
 
 	-- Remove the old one.
 	if g_channel then g_channel:Remove() end
-	
+
 	-- don't let it go out of scope!
 	g_channel = ch
-	
+
 	if g_channel and CLIENT then
 		g_channel:SetBalance(-1) -- start on the left speaker.
 		print(g_channel:BalanceIsFading()) -- "false"
-		
+
 		g_channel:BalanceFadeTo(0, 10) -- slowly move to the center for 10 secounds.
 		print(g_channel:BalanceIsFading()) -- "true" for the next 10 secounds.
 	end
@@ -252,19 +254,19 @@ BASS3.PlayFile(path, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_NOBLOCK, BASS
 
 	-- Remove the old one.
 	if g_channel then g_channel:Remove() end
-	
+
 	-- don't let it go out of scope!
 	g_channel = ch
-	
+
 	if g_channel then
 		if CLIENT then
 			g_channel:SetVolume(0) -- start muted
 			print(g_channel:VolumeIsFading()) -- "false"
-			
+
 			g_channel:VolumeFadeTo(1, 2) -- slowly increase the volume to 1 for 2 secounds.
 			print(g_channel:VolumeIsFading()) -- "true" for the next 2 secounds.
 		end
-		
+
 		g_channel:Play()
 	end
 end)
@@ -277,14 +279,14 @@ local fft = {}
 local function printfft(ch)
 	-- Is 'ch' valid?
 	if !IsValid(ch) then return end
-	
+
 	-- Get the spectrum and print the count
 	print("count: ", ch:FFT(fft, BASS3.ENUM.FFT_16))
 
 	-- Print the spectrum values
 	print("spectrum values: ")
 	PrintTable(fft)
-	
+
 	-- Get the complex spectrum and print the count
 	print("count: ", ch:FFTComplex(fft, BASS3.ENUM.FFT_16))
 
@@ -313,7 +315,7 @@ BASS3.PlayURL(url, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_3D), function(c
 
 	-- Remove the old one.
 	if g_channel then g_channel:Remove() end
-	
+
 	-- don't let it go out of scope!
 	g_channel = ch
 
@@ -323,7 +325,7 @@ BASS3.PlayURL(url, bit.bor(BASS3.ENUM.MODE_MONO, BASS3.ENUM.MODE_3D), function(c
 	-- Recycled
 	local pos1, dir1 = g_channel:GetPos(pos, dir)
 	print(pos, dir) -- Prints "124.0000 241.0000 235.0000    0.0000 0.0000 1.0000"
-	
+
 	-- pos1, dir1 are leading to the same vector as pos, dir
 	print(pos1, dir2) -- Prints "124.0000 241.0000 235.0000    0.0000 0.0000 1.0000"
 
