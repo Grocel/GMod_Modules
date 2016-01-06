@@ -14,7 +14,8 @@ namespace UTIL
 		typedef bool (*ForEachSegmentFunc)(string& sFind, unsigned int iCount, void *pUserData);
 
 		void Trim(string& sString);
-		bool GetKeyValueFromSeperator(string &sInput, string &sSeperator, string &sKey, string &sValue);
+		bool GetKeyValueFromSeperator(string &sInput, string &sSeperator, string &sKey, string &sValue, bool reverse = false);
+		bool RemoveChars(string &sInput, const char* sCharsToRemove);
 		unsigned int ForEachSegment(string sInput, string &sSeperator, ForEachSegmentFunc func, void *pUserData);
 		bool ToNumber(const char *pString, lua_n &fNumber);
 		bool ToNumber(string &sInput, lua_n &fNumber);

@@ -144,17 +144,33 @@ int TChannel::LoadURL(const char *sURL, bass_flag eFlags)
 
 	if(sURL == NULL)
 	{
+		lock_guard<mutex> Lock2(MutexLock);
 		RemoveInternal();
 		return BASS_ERROR_FILEOPEN;
 	}
 
-	RemoveInternal();
 	int iLen = strlen(sURL) + 1;
-	sFilename = new char[iLen];
-	UTIL::safe_cpy(sFilename, sURL, iLen);
+	char* sNewFilename = new char[iLen];
+	UTIL::safe_cpy(sNewFilename, sURL, iLen);
 
-	bass_p pLoadedHandle = BASS_StreamCreateURL(sFilename, 0, eFlags, NULL, NULL);
-	int iErr = BASS_ErrorGetCode();
+	bass_p pLoadedHandle = NULL;
+	int iErr = 0;
+	bCanSeek = false;
+		
+	try
+	{
+		pLoadedHandle = BASS_StreamCreateURL(sNewFilename, 0, eFlags, NULL, NULL);
+		iErr = BASS_ErrorGetCode();
+	}
+	catch(...)
+	{
+		pLoadedHandle = NULL;
+		iErr = BASS_ERROR_MEM;
+	}
+
+	lock_guard<mutex> Lock2(MutexLock);
+	RemoveInternal();
+	sFilename = sNewFilename;
 
 	if(iErr == BASS_OK)
 	{
@@ -179,23 +195,35 @@ int TChannel::LoadFile(const char *sURL, bass_flag eFlags)
 
 	if(sURL == NULL)
 	{
+		lock_guard<mutex> Lock2(MutexLock);
 		RemoveInternal();
 		return BASS_ERROR_FILEOPEN;
 	}
 
-	RemoveInternal();
 	int iLen = strlen(sURL) + 1;
-	sFilename = new char[iLen];
-	UTIL::safe_cpy(sFilename, sURL, iLen);
+	char* sNewFilename = new char[iLen];
+	UTIL::safe_cpy(sNewFilename, sURL, iLen);
 
-	V_FixSlashes(sFilename);
-	V_FixDoubleSlashes(sFilename);
+	V_FixSlashes(sNewFilename);
+	V_FixDoubleSlashes(sNewFilename);
 
-	bass_p pLoadedHandle;
-	int iErr;
+	bass_p pLoadedHandle = NULL;
+	int iErr = 0;
+	bCanSeek = false;
 
-	BASSFILESYS::PlayFile(sFilename, eFlags, &pLoadedHandle, &iErr);
+	try
+	{
+		BASSFILESYS::PlayFile(sNewFilename, eFlags, &pLoadedHandle, &iErr);
+	}
+	catch(...)
+	{
+		pLoadedHandle = NULL;
+		iErr = BASS_ERROR_MEM;
+	}
 
+	lock_guard<mutex> Lock2(MutexLock);
+	RemoveInternal();
+	sFilename = sNewFilename;
 
 	if(iErr == BASS_OK)
 	{

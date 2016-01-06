@@ -11,6 +11,9 @@ int Init(lua_State* state)
 	g_pListPendingCallbacks = new SyncList<TChannelCallbackData *>;
 	g_pListRunningThreads = new SyncList<thread *>;
 	g_pfFFTBuffer = new float[32768];
+	g_ProxySettings = new char[16384];
+	g_ProxySettings[0] = 0;
+	g_ProxySettings[16383] = 0;
 
 	try
 	{
@@ -23,14 +26,18 @@ int Init(lua_State* state)
 		return 0;
 	}
 
+	BASS_Stop();
 	BASSFILESYS::Init();
 
 	LUAINTERFACE::SetupGlobalTable(state);
 	LUAINTERFACE::SetupBASSTable(state);
 	LUAINTERFACE::SetupChannelObject(state);
+	BASS_Start();
 
 	try
 	{
+		BASS_Stop();
+
 #ifdef _WIN32
 		BASS_SetEAXParameters(EAX_PRESET_GENERIC);
 #endif
@@ -51,9 +58,36 @@ int Init(lua_State* state)
 		BASS_SetConfig(BASS_CONFIG_NET_READTIMEOUT, 15000);
 		BASS_SetConfig(BASS_CONFIG_VERIFY, 0x8000); // 32 kB
 		BASS_SetConfig(BASS_CONFIG_VERIFY_NET, 0x8000); // 32 kB
+
+		g_oldProxySettings = (char*)BASS_GetConfigPtr(BASS_CONFIG_NET_PROXY);
+		BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY, g_oldProxySettings);
+
+		if(g_oldProxySettings != NULL && g_oldProxySettings != nullptr)
+		{
+			int iLen = strlen(g_oldProxySettings) + 1;
+			if(iLen >= 16384 || iLen < 0)
+			{
+				g_ProxySettings[0] = 0;	
+			}
+			else
+			{
+				UTIL::safe_cpy(g_ProxySettings, g_oldProxySettings, iLen);
+				g_ProxySettings[16383] = 0;
+			}
+		}
+		else
+		{
+			g_ProxySettings[0] = 0;
+			g_oldProxySettings = NULL;
+		}
+
+		BASS_Start();
 	}
 	catch(...)
 	{
+		BASS_Stop();
+		BASS_Start();
+
 		LUA->ThrowError("BASS Init failed, exception error: Unknown");
 		return 0;
 	}
@@ -227,9 +261,17 @@ GMOD_MODULE_CLOSE()
 		g_pfFFTBuffer = NULL;
 	}
 
+	if(g_ProxySettings != NULL)
+	{
+		delete [] g_ProxySettings;
+		g_ProxySettings = NULL;
+	}
+
 #ifdef _WIN32
 	BASS_SetEAXParameters(EAX_PRESET_GENERIC);
 #endif
+
+	BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY, g_oldProxySettings);
 
 	if(g_SELFLOADED)
 	{

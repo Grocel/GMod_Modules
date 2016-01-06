@@ -34,6 +34,7 @@ namespace LUAINTERFACE
 	void DeleteChannel(TChannel *pChannel)
 	{
 		if(pChannel == NULL) return;
+		if(pChannel == nullptr) return;
 
 		unsigned int iRefs = pChannel->RemoveReference();
 		if(!iRefs) delete pChannel;
@@ -199,6 +200,8 @@ namespace LUAINTERFACE
 			ADDTABFUNC(BASS3, PlayURL);
 			ADDTABFUNC(BASS3, CreateChannel);
 			ADDTABFUNC(BASS3, DecodeError);
+			ADDTABFUNC(BASS3, SetProxy);
+			ADDTABFUNC(BASS3, GetProxy);
 
 			if(g_CLIENT)
 			{

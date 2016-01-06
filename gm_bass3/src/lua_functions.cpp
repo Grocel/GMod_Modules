@@ -134,7 +134,7 @@ namespace LUAFUNC
 
 			delete pCallbackData;
 
-			if(iError == BASS_OK && pChannel == NULL) iError = BASS_ERROR_UNKNOWN;
+			if(iError == BASS_OK && pChannel == NULL || pChannel == nullptr) iError = BASS_ERROR_UNKNOWN;
 
 			if(!bIsRecycledChannel && iError != BASS_OK)
 			{
@@ -142,7 +142,7 @@ namespace LUAFUNC
 				pChannel = NULL;
 			}
 
-			if(pChannel != NULL)
+			if(pChannel != NULL && pChannel != nullptr)
 			{
 				if(g_CLIENT)
 				{
@@ -259,6 +259,203 @@ namespace LUAFUNC
 				return 1;
 			}
 
+			LUA_FUNCTION(SetProxy)
+			{
+				if(g_ProxySettings == NULL) return 0;
+				if(g_ProxySettings == nullptr) return 0;
+
+				string sServerIP = "";
+				int iServerPort = 0;
+
+				string sAuthName = "";
+				string sAuthPass = "";
+
+				string sAuth = "";
+				string sProxy = "";
+
+				if(!ISNIL(1))
+				{
+					LUA->CheckType(1, Type::STRING);
+					sServerIP = LUA->GetString(1);
+				}
+				else
+				{
+					sServerIP = "";
+				}
+
+				if(sServerIP != "")
+				{
+					LUA->CheckType(2, Type::NUMBER);
+					iServerPort = LUA->GetNumber(2);
+
+					if(iServerPort < 0x0000) iServerPort = 0x0000;
+					if(iServerPort > 0xFFFF) iServerPort = 0xFFFF;
+				} else {
+					iServerPort = 0;
+				}
+
+				if(!ISNIL(3))
+				{
+					LUA->CheckType(3, Type::STRING);
+					sAuthName = LUA->GetString(3);
+
+					if(!ISNIL(4))
+					{
+						LUA->CheckType(4, Type::STRING);
+						sAuthPass = LUA->GetString(4);
+					}
+					else
+					{
+						sAuthPass = "";
+					}
+				}
+				else
+				{
+					sAuthName = "";
+					sAuthPass = "";
+				}
+
+				UTIL::STRING::RemoveChars(sAuthName, "@:");
+				UTIL::STRING::RemoveChars(sAuthPass, "@:");
+				UTIL::STRING::RemoveChars(sServerIP, "@");
+				UTIL::STRING::Trim(sAuthName);
+				UTIL::STRING::Trim(sServerIP);
+
+				if(sAuthName != "")
+				{
+					if(sAuthPass != "")
+					{
+						sAuth += sAuthName;
+						sAuth += ':';
+						sAuth += sAuthPass;
+						sAuth += '@';
+					}
+					else
+					{
+						sAuth += sAuthName;
+						sAuth += '@';
+					}
+				}
+
+				sProxy += sAuth;
+				sProxy += sServerIP;
+				if(sServerIP != "") {
+					sProxy += ":";
+					sProxy += to_string(iServerPort);			
+				}
+				
+				int iLen = sProxy.length() + 1;
+				if(iLen >= 16384 || iLen < 0)
+				{
+					return 0;
+				}
+
+				UTIL::safe_cpy(g_ProxySettings, sProxy.c_str(), iLen);
+				g_ProxySettings[16383] = 0;
+
+				BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY, g_ProxySettings);
+				return 0;
+			}
+
+			LUA_FUNCTION(GetProxy)
+			{
+				if(g_ProxySettings == NULL || g_ProxySettings == nullptr)
+				{
+					LUA->PushString("");
+					LUA->PushNumber(0);
+					LUA->PushString("");
+					LUA->PushString("");
+
+					return 4;
+				}
+
+				char* curProxySettings = (char*)BASS_GetConfigPtr(BASS_CONFIG_NET_PROXY);
+				if(curProxySettings != NULL && curProxySettings != nullptr)
+				{
+					int iLen = strlen(curProxySettings) + 1;
+					if(iLen >= 16384 || iLen < 0)
+					{
+						g_ProxySettings[0] = 0;	
+					}
+					else
+					{
+						UTIL::safe_cpy(g_ProxySettings, curProxySettings, iLen);
+						g_ProxySettings[16383] = 0;			
+					}
+				}
+				else
+				{
+					curProxySettings = NULL;
+					g_ProxySettings[0] = 0;
+
+					LUA->PushString("");
+					LUA->PushNumber(0);
+					LUA->PushString("");
+					LUA->PushString("");
+
+					return 4;
+				}
+
+				string sProxy(g_ProxySettings);
+				string sSeperator = "";
+
+				string sAuth = "";
+				string sServerAddress = "";
+
+				string sServerIP = "";
+				string sServerPort = "";
+				string sServerPort2 = "";
+				int iServerPort = 0;
+
+				string sAuthName = "";
+				string sAuthPass = "";
+
+				sSeperator = "@";
+				if(!UTIL::STRING::GetKeyValueFromSeperator(sProxy, sSeperator, sAuth, sServerAddress))
+				{
+					sAuth = "";
+					sServerAddress = sProxy;
+				}
+
+				sSeperator = ":";
+				if(!UTIL::STRING::GetKeyValueFromSeperator(sAuth, sSeperator, sAuthName, sAuthPass))
+				{
+					sAuthName = sAuth;
+					sAuthPass = "";
+				}
+
+				if(!UTIL::STRING::GetKeyValueFromSeperator(sServerAddress, sSeperator, sServerIP, sServerPort, true))
+				{
+					sServerIP = sServerAddress;
+					sServerPort = "";
+				}
+
+				UTIL::STRING::RemoveChars(sAuthName, "@:");
+				UTIL::STRING::RemoveChars(sAuthPass, "@:");
+				UTIL::STRING::RemoveChars(sServerIP, "@");
+				UTIL::STRING::Trim(sAuthName);
+				UTIL::STRING::Trim(sServerIP);
+				UTIL::STRING::Trim(sServerPort);
+
+				try
+				{
+					iServerPort = stoi(sServerPort);
+				}
+				catch(...)
+				{
+					iServerPort = 0;
+				}
+
+				if(iServerPort < 0x0000) iServerPort = 0x0000;
+				if(iServerPort > 0xFFFF) iServerPort = 0xFFFF;
+				
+				LUA->PushString(sServerIP.c_str());
+				LUA->PushNumber(iServerPort);
+				LUA->PushString(sAuthName.c_str());
+				LUA->PushString(sAuthPass.c_str());
+				return 4;
+			}
+
 			LUA_FUNCTION(GetEAX)
 			{
 				DWORD iENV;
@@ -366,7 +563,7 @@ namespace LUAFUNC
 				LUA->CheckType(1, TYPE_CHANNEL);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL)
+				if(pChannel == NULL || pChannel == nullptr)
 				{
 					LUA->PushString("[NULL " META_CHANNEL "]");
 					return 1;
@@ -384,7 +581,7 @@ namespace LUAFUNC
 				LUA->CheckType(1, TYPE_CHANNEL);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				pChannel->Remove();
 				return 0;
@@ -394,7 +591,7 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL)
+				if(pChannel == NULL || pChannel == nullptr)
 				{
 					LUA->PushBool(false);
 					return 1;
@@ -411,7 +608,11 @@ namespace LUAFUNC
 				if(!LUA->IsType(3, Type::NUMBER) && !LUA->IsType(3, Type::STRING) ) LUA->CheckType(3, Type::NUMBER);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				const char* sURL = LUA->GetString( 2 );
 
@@ -450,7 +651,11 @@ namespace LUAFUNC
 				if(!LUA->IsType(3, Type::NUMBER) && !LUA->IsType(3, Type::STRING) ) LUA->CheckType(3, Type::NUMBER);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				const char* sURL = LUA->GetString( 2 );
 
@@ -486,7 +691,7 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				if(ISNIL(2))
 				{
@@ -504,7 +709,7 @@ namespace LUAFUNC
 				LUA->CheckType(1, TYPE_CHANNEL);			
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 				pChannel->Stop();
 
 				return 0;
@@ -515,7 +720,7 @@ namespace LUAFUNC
 				LUA->CheckType(1, TYPE_CHANNEL);			
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 				pChannel->Pause();
 
 				return 0;
@@ -525,7 +730,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(false);
+					return 1;
+				}
 
 				LUA->PushNumber(SetChannelStateFlag(pChannel->GetState()));
 				return 1;
@@ -537,7 +746,7 @@ namespace LUAFUNC
 				LUA->CheckType(2, Type::NUMBER);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				pChannel->SetVolume((float)LUA->GetNumber(2));
 				return 0;
@@ -547,7 +756,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
 
 				LUA->PushNumber(pChannel->GetVolume());
 				return 1;
@@ -560,7 +773,7 @@ namespace LUAFUNC
 				LUA->CheckType(3, Type::NUMBER);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				DWORD iIime = (DWORD)(LUA->GetNumber(3) * 1000);
 
@@ -572,7 +785,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				LUA->PushBool(pChannel->VolumeIsFading());
 				return 1;
@@ -584,7 +801,7 @@ namespace LUAFUNC
 				LUA->CheckType(2, Type::NUMBER);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				pChannel->SetBalance((float)LUA->GetNumber(2));
 				return 0;
@@ -594,7 +811,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
 
 				LUA->PushNumber(pChannel->GetBalance());
 				return 1;
@@ -607,7 +828,7 @@ namespace LUAFUNC
 				LUA->CheckType(3, Type::NUMBER);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				DWORD iIime = (DWORD)(LUA->GetNumber(3) * 1000);
 
@@ -619,7 +840,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				LUA->PushBool(pChannel->BalanceIsFading());
 				return 1;
@@ -629,7 +854,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				LUA->PushBool(pChannel->Is3D());
 				return 1;
@@ -639,7 +868,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				LUA->PushBool(pChannel->IsLooping());
 				return 1;
@@ -649,7 +882,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				LUA->PushBool(pChannel->IsOnline());
 				return 1;
@@ -659,7 +896,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				LUA->PushBool(pChannel->IsBlockStreamed());
 				return 1;
@@ -672,7 +913,7 @@ namespace LUAFUNC
 				LUA->CheckType(2, Type::BOOL);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				pChannel->EnableLooping(LUA->GetBool(2));
 				return 0;
@@ -707,8 +948,17 @@ namespace LUAFUNC
 				}
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
-				if(g_pfFFTBuffer == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
+
+				if(g_pfFFTBuffer == NULL || g_pfFFTBuffer == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
 
 				bass_flag iFlag = BASS_NULL;
 				unsigned int iCount = 0;
@@ -832,8 +1082,17 @@ namespace LUAFUNC
 				}
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
-				if(g_pfFFTBuffer == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
+
+				if(g_pfFFTBuffer == NULL || g_pfFFTBuffer == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
 
 				bass_flag iFlag = BASS_NULL;
 				unsigned int iCount = 0;
@@ -924,7 +1183,6 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
 
 				bool bRMS = false;
 				bool bToDecibel = false;
@@ -951,7 +1209,7 @@ namespace LUAFUNC
 				float fTmp;
 				unsigned int i;
 
-				if(!pChannel->GetLevelEx(g_pfFFTBuffer, fTimeFrame, bRMS))
+				if(pChannel == NULL || pChannel == nullptr || !pChannel->GetLevelEx(g_pfFFTBuffer, fTimeFrame, bRMS))
 				{
 					if(bToDecibel)
 					{
@@ -967,30 +1225,30 @@ namespace LUAFUNC
 							LUA->PushNumber(0);
 						}
 					}
+
+					return 2;
+				}
+
+				if(bToDecibel)
+				{
+					for (i = 0; i < 2; i++)
+					{
+						fTmp = g_pfFFTBuffer[i];
+						fTmp = ((fTmp > 0) ? 20 * log10(fTmp) : BASS_MIN_DECIBELS);
+						if(fTmp < BASS_MIN_DECIBELS) fTmp = BASS_MIN_DECIBELS;
+
+						LUA->PushNumber(fTmp);
+					}
 				}
 				else
 				{
-					if(bToDecibel)
+					for (i = 0; i < 2; i++)
 					{
-						for (i = 0; i < 2; i++)
-						{
-							fTmp = g_pfFFTBuffer[i];
-							fTmp = ((fTmp > 0) ? 20 * log10(fTmp) : BASS_MIN_DECIBELS);
-							if(fTmp < BASS_MIN_DECIBELS) fTmp = BASS_MIN_DECIBELS;
+						fTmp = g_pfFFTBuffer[i];
+						if(fTmp < 0) fTmp = 0;
+						if(fTmp > 1) fTmp = 1;
 
-							LUA->PushNumber(fTmp);
-						}
-					}
-					else
-					{
-						for (i = 0; i < 2; i++)
-						{
-							fTmp = g_pfFFTBuffer[i];
-							if(fTmp < 0) fTmp = 0;
-							if(fTmp > 1) fTmp = 1;
-
-							LUA->PushNumber(fTmp);
-						}
+						LUA->PushNumber(fTmp);
 					}
 				}
 
@@ -1001,7 +1259,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
 
 				LUA->PushNumber(pChannel->GetTime());
 				return 1;
@@ -1013,7 +1275,7 @@ namespace LUAFUNC
 				LUA->CheckType(2, Type::NUMBER);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				pChannel->SetTime(LUA->GetNumber(2));
 				return 0;
@@ -1024,7 +1286,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
 
 				LUA->PushNumber(pChannel->GetLength());
 				return 1;
@@ -1034,7 +1300,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				LUA->PushBool(pChannel->IsEndless());
 				return 1;
@@ -1045,7 +1315,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
 
 				LUA->PushBool(pChannel->IsSeeking());
 				return 1;
@@ -1058,7 +1332,6 @@ namespace LUAFUNC
 				LUA->CheckType(2, Type::NUMBER);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
 
 				unsigned int iLuaFlag = (unsigned int)LUA->GetNumber(2);
 				int iTableRef = 0;
@@ -1077,47 +1350,50 @@ namespace LUAFUNC
 				iTableRef = LUA->ReferenceCreate();
 				LUA->ReferencePush( iTableRef );
 
-				switch (iLuaFlag)
+				if(pChannel != NULL && pChannel != nullptr)
 				{
-					case LUAENUM_TAG_META:
-						pTagData = pChannel->GetTag(BASS_TAG_META);
-						TAG::META(pTagData, state);
-					break;
+					switch (iLuaFlag)
+					{
+						case LUAENUM_TAG_META:
+							pTagData = pChannel->GetTag(BASS_TAG_META);
+							TAG::META(pTagData, state);
+						break;
 
-					case LUAENUM_TAG_ID3:
-						pTagData = pChannel->GetTag(BASS_TAG_ID3);
-						TAG::ID3(pTagData, state);
-					break;
+						case LUAENUM_TAG_ID3:
+							pTagData = pChannel->GetTag(BASS_TAG_ID3);
+							TAG::ID3(pTagData, state);
+						break;
 
-					case LUAENUM_TAG_HTTP:
-						pTagData = pChannel->GetTag(BASS_TAG_HTTP);
-						TAG::HTTP(pTagData, state);
-					break;
+						case LUAENUM_TAG_HTTP:
+							pTagData = pChannel->GetTag(BASS_TAG_HTTP);
+							TAG::HTTP(pTagData, state);
+						break;
 
-					case LUAENUM_TAG_ICY:
-						pTagData = pChannel->GetTag(BASS_TAG_ICY);
-						TAG::ICY(pTagData, state);
-					break;
+						case LUAENUM_TAG_ICY:
+							pTagData = pChannel->GetTag(BASS_TAG_ICY);
+							TAG::ICY(pTagData, state);
+						break;
 
-					case LUAENUM_TAG_MF:
-						pTagData = pChannel->GetTag(BASS_TAG_MF);
-						TAG::MF(pTagData, state);
-					break;
+						case LUAENUM_TAG_MF:
+							pTagData = pChannel->GetTag(BASS_TAG_MF);
+							TAG::MF(pTagData, state);
+						break;
 
-					case LUAENUM_TAG_MP4:
-						pTagData = pChannel->GetTag(BASS_TAG_MP4);
-						TAG::MP4(pTagData, state);
-					break;
+						case LUAENUM_TAG_MP4:
+							pTagData = pChannel->GetTag(BASS_TAG_MP4);
+							TAG::MP4(pTagData, state);
+						break;
 
-					case LUAENUM_TAG_APE:
-						pTagData = pChannel->GetTag(BASS_TAG_APE);
-						TAG::APE(pTagData, state);
-					break;
+						case LUAENUM_TAG_APE:
+							pTagData = pChannel->GetTag(BASS_TAG_APE);
+							TAG::APE(pTagData, state);
+						break;
 
-					case LUAENUM_TAG_OGG:
-						pTagData = pChannel->GetTag(BASS_TAG_OGG);
-						TAG::OGG(pTagData, state);
-					break;
+						case LUAENUM_TAG_OGG:
+							pTagData = pChannel->GetTag(BASS_TAG_OGG);
+							TAG::OGG(pTagData, state);
+						break;
+					}
 				}
 				LUA->Pop();
 
@@ -1131,7 +1407,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushString("");
+					return 1;
+				}
 
 				LUA->PushString(pChannel->GetFileName());
 				return 1;
@@ -1141,7 +1421,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushString("");
+					return 1;
+				}
 
 				LUA->PushString(pChannel->GetFileFormat());
 				return 1;
@@ -1152,7 +1436,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
 
 				LUA->PushNumber(pChannel->GetSamplingRate());
 				return 1;
@@ -1162,7 +1450,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
 
 				LUA->PushNumber(pChannel->GetBitsPerSample());
 				return 1;
@@ -1172,15 +1464,15 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
 
 				BASS_3DVECTOR vBassPos(0, 0, 0);
 				BASS_3DVECTOR vBassDir(0, 0, 0);
 				BASS_3DVECTOR vBassVel(0, 0, 0);
 
-				pChannel->GetPos(&vBassPos, &vBassDir, &vBassVel);
-
-				//int iRef = 0;
+				if(pChannel != NULL && pChannel != nullptr)
+				{
+					pChannel->GetPos(&vBassPos, &vBassDir, &vBassVel);
+				}
 
 				if(!ISNIL(2)) // Allow recycling
 				{
@@ -1192,11 +1484,6 @@ namespace LUAFUNC
 					pvPos->z = vBassPos.z;
 
 					LUA->Push(2);
-					//iRef = LUA->ReferenceCreate();
-					//LUA->Pop();
-
-					//LUA->ReferencePush(iRef);
-					//LUA->ReferenceFree(iRef);
 				}
 				else
 				{
@@ -1213,11 +1500,6 @@ namespace LUAFUNC
 					pvDir->z = vBassDir.z;
 
 					LUA->Push(3);
-					//iRef = LUA->ReferenceCreate();
-					//LUA->Pop();
-
-					//LUA->ReferencePush(iRef);
-					//LUA->ReferenceFree(iRef);
 				}
 				else
 				{
@@ -1234,11 +1516,6 @@ namespace LUAFUNC
 					pvVel->z = vBassVel.z;
 
 					LUA->Push(4);
-					//iRef = LUA->ReferenceCreate();
-					//LUA->Pop();
-
-					//LUA->ReferencePush(iRef);
-					//LUA->ReferenceFree(iRef);
 				}
 				else
 				{
@@ -1254,7 +1531,7 @@ namespace LUAFUNC
 				LUA->CheckType(2, Type::VECTOR);
 
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				BASS_3DVECTOR vBassPos(0, 0, 0);
 				BASS_3DVECTOR vBassDir(0, 0, 0);
@@ -1299,12 +1576,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
 
 				float fMin;
 				float fMax;
 
-				if(!pChannel->Get3DFadeDistance(&fMin, &fMax))
+				if(pChannel == NULL || pChannel == nullptr || !pChannel->Get3DFadeDistance(&fMin, &fMax))
 				{
 					fMin = 0;	
 					fMax = 0;	
@@ -1319,7 +1595,7 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				float fMin = BASS_NO_CHANGE;
 				float fMax = BASS_NO_CHANGE;
@@ -1345,13 +1621,12 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
 
 				DWORD iInnerAngle;
 				DWORD iOuterAngle;
 				float fOuterVolume;
 
-				if(!pChannel->Get3DCone(&iInnerAngle, &iOuterAngle, &fOuterVolume))
+				if(pChannel == NULL || pChannel == nullptr || !pChannel->Get3DCone(&iInnerAngle, &iOuterAngle, &fOuterVolume))
 				{
 					iInnerAngle = 0;	
 					iOuterAngle = 0;
@@ -1369,7 +1644,7 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				DWORD iInnerAngle = BASS_NO_CHANGE;
 				DWORD iOuterAngle = BASS_NO_CHANGE;
@@ -1401,7 +1676,11 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr)
+				{
+					LUA->PushNumber(BASS_AUTO);
+					return 1;
+				}
 
 				float iMix = pChannel->GetEAXMix();
 				LUA->PushNumber(iMix);
@@ -1412,7 +1691,7 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);
 				TChannel* pChannel = GETCHANNEL(1);
-				if(pChannel == NULL) return 0;
+				if(pChannel == NULL || pChannel == nullptr) return 0;
 
 				float iMix = BASS_AUTO;
 

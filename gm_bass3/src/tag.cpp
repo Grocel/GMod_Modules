@@ -26,13 +26,16 @@ bool ReadMetaTag(string& sLine, unsigned int iCount, void *pUserData)
 	string sSeperator = "=";
 
 	if(!UTIL::STRING::GetKeyValueFromSeperator(sLine, sSeperator, sKey, sValue)) return false;
+	transform(sKey.begin(), sKey.end(), sKey.begin(), ::tolower);
 
-	if ( sKey != "" ) {
+	if(sKey != "")
+	{
 		if(sKey.front() == '\'') sKey.erase( 0, 1 );
 		if(sKey.back() == '\'') sKey.erase( sKey.size() - 1 );
 	}
 
-	if ( sValue != "" ) {
+	if(sValue != "")
+	{
 		if(sValue.front() == '\'') sValue.erase( 0, 1 );
 		if(sValue.back() == '\'') sValue.erase( sValue.size() - 1 );
 	}
@@ -107,6 +110,21 @@ bool GenericParseList(const char* pTagData, string& sSeperator, lua_State* state
 			}
 
 			bIsNumber = UTIL::STRING::ToNumber(sValue, fValue);
+			transform(sKey.begin(), sKey.end(), sKey.begin(), ::tolower);
+			UTIL::STRING::Trim(sKey);
+			UTIL::STRING::Trim(sValue);
+
+			if(sKey == "")
+			{
+				pTagData += sData.length() + 1; // move on to next string
+				continue;
+			}
+
+			if(sValue == "")
+			{
+				pTagData += sData.length() + 1; // move on to next string
+				continue;
+			}
 
 			LUA->PushString( sKey.c_str() );
 			if(bIsNumber) {

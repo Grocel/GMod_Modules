@@ -58,6 +58,9 @@ namespace LUAFUNC
 			LUA_FUNCTION(PlayURL);
 			LUA_FUNCTION(CreateChannel);
 			LUA_FUNCTION(DecodeError);
+			LUA_FUNCTION(SetProxy);
+			LUA_FUNCTION(GetProxy);
+
 			LUA_FUNCTION(GetEAX);
 			LUA_FUNCTION(SetEAX);
 		}

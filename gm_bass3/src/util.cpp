@@ -90,7 +90,7 @@ namespace UTIL
 			sString = sString.substr( first, last - first + 1);
 		}
 
-		bool GetKeyValueFromSeperator(string &sInput, string &sSeperator, string &sKey, string &sValue)
+		bool GetKeyValueFromSeperator(string &sInput, string &sSeperator, string &sKey, string &sValue, bool reverse)
 		{
 			sKey = "";
 			sValue = "";
@@ -98,16 +98,35 @@ namespace UTIL
 			if(sSeperator == "") return false;
 			if(sInput == "") return false;
 
-			size_t posMatch = sInput.find(sSeperator);
+			size_t posMatch = string::npos;
+			if(reverse)
+			{
+				posMatch = sInput.rfind(sSeperator);
+			}
+			else
+			{
+				posMatch = sInput.find(sSeperator);
+			}
+
 			if(posMatch == string::npos) return false;
 
 			sKey = sInput.substr(0, posMatch);
-			UTIL::STRING::Trim(sKey);
 			if(sKey == "") return false;
-			transform(sKey.begin(), sKey.end(), sKey.begin(), ::tolower);
 
 			sValue = sInput.substr(posMatch + sSeperator.length());
-			UTIL::STRING::Trim(sValue);
+			return true;
+		}
+
+		bool RemoveChars(string &sInput, const char* sCharsToRemove)
+		{
+			if(sInput == "") return false;
+			if(sCharsToRemove == NULL) return false;
+
+			for(unsigned int i = 0; i < strlen(sCharsToRemove); i++)
+			{
+				sInput.erase(remove(sInput.begin(), sInput.end(), sCharsToRemove[i]), sInput.end());
+			}
+
 			return true;
 		}
 
