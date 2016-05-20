@@ -129,6 +129,7 @@ public:
 
 	DWORD GetSamplingRate();
 	BYTE GetBitsPerSample();
+	float GetAverageBitRate();
 
 	bool GetPos(BASS_3DVECTOR* pvPos, BASS_3DVECTOR* pvDir, BASS_3DVECTOR* pvVel);
 	bool SetPos(BASS_3DVECTOR* pvPos, BASS_3DVECTOR* pvDir, BASS_3DVECTOR* pvVel);

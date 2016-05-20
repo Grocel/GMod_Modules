@@ -32,7 +32,7 @@ public:
 		b->value = data;
 
 		lock_guard<mutex> Lock(MutexLock);
-		if(head == NULL)
+		if((head == NULL) || (head == nullptr))
 		{
 			head = b;
 			tail = b;
@@ -51,6 +51,7 @@ public:
 		{ // Scope
 			lock_guard<mutex> Lock(MutexLock);
 			if(head == NULL) return NULL;
+			if(head == nullptr) return NULL;
 
 			tmp = head;
 			head = tmp->next;

@@ -17,7 +17,7 @@ namespace LUAINTERFACE
 {
 	void PushChannel(lua_State* state, TChannel* pChannel)
 	{
-		if(pChannel == NULL)
+		if(ISNULLPTR(pChannel))
 		{
 			LUA->PushNil();
 			return;
@@ -33,9 +33,8 @@ namespace LUAINTERFACE
 
 	void DeleteChannel(TChannel *pChannel)
 	{
-		if(pChannel == NULL) return;
-		if(pChannel == nullptr) return;
-
+		if(ISNULLPTR(pChannel)) return;
+		
 		unsigned int iRefs = pChannel->RemoveReference();
 		if(!iRefs) delete pChannel;
 	}
@@ -43,7 +42,7 @@ namespace LUAINTERFACE
 	// Todo: Get Source SDK to compile for Linux, so we can use real Vectors...
 	void PushVector(lua_State* state, BASS_3DVECTOR* pBassVector)
 	{
-		if(pBassVector == NULL)
+		if(ISNULLPTR(pBassVector))
 		{
 			LUA->PushNil();
 			return;
@@ -154,6 +153,7 @@ namespace LUAINTERFACE
 			ADDENUM(FFT_4096);
 			ADDENUM(FFT_8192);
 			ADDENUM(FFT_16384);
+			ADDENUM(FFT_32768);
 
 			// Custom FFT modes
 			ADDENUM(FFT_128);
@@ -200,6 +200,9 @@ namespace LUAINTERFACE
 			ADDTABFUNC(BASS3, PlayURL);
 			ADDTABFUNC(BASS3, CreateChannel);
 			ADDTABFUNC(BASS3, DecodeError);
+
+			ADDTABFUNC(BASS3, SetAgent);
+			ADDTABFUNC(BASS3, GetAgent);
 			ADDTABFUNC(BASS3, SetProxy);
 			ADDTABFUNC(BASS3, GetProxy);
 
@@ -274,6 +277,7 @@ namespace LUAINTERFACE
 
 			ADDMETHOD(IBASS3Channel, GetSamplingRate);
 			ADDMETHOD(IBASS3Channel, GetBitsPerSample);
+			ADDMETHOD(IBASS3Channel, GetAverageBitRate);
 
 			if(g_CLIENT)
 			{

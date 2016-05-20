@@ -13,5 +13,6 @@ thread* g_thCleanUp = NULL;
 SyncList<TChannelCallbackData *>* g_pListPendingCallbacks = NULL;
 SyncList<thread *>* g_pListRunningThreads = NULL;
 float* g_pfFFTBuffer = NULL;
-char* g_ProxySettings = NULL;
-char* g_oldProxySettings = NULL;
+
+string g_oldAgentSettings;
+string g_oldProxySettings;

@@ -4,6 +4,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#define ISNULLPTR(x) ((x == NULL) || (x == nullptr))
+
 void thfnLoadStream(TChannelThreadArgs ThreadArgs);
 void thfnCleanUp();
 

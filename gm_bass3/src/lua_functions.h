@@ -21,6 +21,7 @@ using namespace GarrysMod::Lua;
 #define LUAENUM_FFT_4096 4
 #define LUAENUM_FFT_8192 5
 #define LUAENUM_FFT_16384 6
+#define LUAENUM_FFT_32768 7
 
 // Custom FFT modes 
 #define LUAENUM_FFT_16 10
@@ -58,6 +59,9 @@ namespace LUAFUNC
 			LUA_FUNCTION(PlayURL);
 			LUA_FUNCTION(CreateChannel);
 			LUA_FUNCTION(DecodeError);
+
+			LUA_FUNCTION(SetAgent);
+			LUA_FUNCTION(GetAgent);
 			LUA_FUNCTION(SetProxy);
 			LUA_FUNCTION(GetProxy);
 
@@ -120,6 +124,7 @@ namespace LUAFUNC
 
 			LUA_FUNCTION(GetSamplingRate);
 			LUA_FUNCTION(GetBitsPerSample);
+			LUA_FUNCTION(GetAverageBitRate);
 
 			LUA_FUNCTION(GetPos);
 			LUA_FUNCTION(SetPos);

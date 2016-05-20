@@ -14,12 +14,10 @@ bool GenericParseList(const char* pTagData, char cSeperator, lua_State* state);
 
 bool ReadMetaTag(string& sLine, unsigned int iCount, void *pUserData)
 {
-	if(pUserData == NULL) return false;
-	if(pUserData == nullptr) return false;
+	if(ISNULLPTR(pUserData)) return false;
 
 	lua_State* state = (lua_State*)(pUserData);
-	if(state == NULL) return false;
-	if(state == nullptr) return false;
+	if(ISNULLPTR(state)) return false;
 
 	string sKey = "";
 	string sValue = "";
@@ -71,7 +69,7 @@ bool GenericParseList(const char* pTagData, const char* pSeperator, lua_State* s
 {
 	string sSeperator = "";
 	
-	if((pSeperator != NULL) && (pSeperator != nullptr))
+	if(!ISNULLPTR(pSeperator))
 	{
 		sSeperator = string(pSeperator);
 	}
@@ -81,10 +79,8 @@ bool GenericParseList(const char* pTagData, const char* pSeperator, lua_State* s
 
 bool GenericParseList(const char* pTagData, string& sSeperator, lua_State* state)
 {
-	if(pTagData == NULL) return false;
-	if(pTagData == nullptr) return false;
-	if(state == NULL) return false;
-	if(state == nullptr) return false;
+	if(ISNULLPTR(pTagData)) return false;
+	if(ISNULLPTR(state)) return false;
 
 	unsigned int i = 0;
 	bool bEmpty = true;
@@ -166,10 +162,8 @@ namespace TAG
 {
 	bool META(const char* pTagData, lua_State* state)
 	{
-		if(pTagData == NULL) return false;
-		if(pTagData == nullptr) return false;
-		if(state == NULL) return false;
-		if(state == nullptr) return false;
+		if(ISNULLPTR(pTagData)) return false;
+		if(ISNULLPTR(state)) return false;
 
 		string sSeperator = ";";
 		string sData = string(pTagData);
@@ -179,14 +173,11 @@ namespace TAG
 
 	bool ID3(const char* pTagData, lua_State* state)
 	{
-		if(pTagData == NULL) return false;
-		if(pTagData == nullptr) return false;
-		if(state == NULL) return false;
-		if(state == nullptr) return false;
+		if(ISNULLPTR(pTagData)) return false;
+		if(ISNULLPTR(state)) return false;
 
 		const TAG_ID3* pTagID3 = (const TAG_ID3*)pTagData;
-		if(pTagID3 == NULL) return false;
-		if(pTagID3 == nullptr) return false;
+		if(ISNULLPTR(pTagID3)) return false;
 
 		lua_n fValue = 0;
 		bool bIsNumber = false;

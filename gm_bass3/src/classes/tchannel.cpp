@@ -13,7 +13,7 @@
 
 void thfnSeekTo(TChannel* pChannel)
 {
-	if(pChannel == NULL) return;
+	if(ISNULLPTR(pChannel)) return;
 	if(!pChannel->CanSeek()) return;
 
 	while(1)
@@ -67,7 +67,7 @@ void TChannel::RemoveInternal()
 	BASS_MusicFree(pHandle);
 	BASS_StreamFree(pHandle);
 
-	if(sFilename != NULL)
+	if(!ISNULLPTR(sFilename))
 	{
 		delete [] sFilename;
 		sFilename = NULL;
@@ -77,7 +77,7 @@ void TChannel::RemoveInternal()
 	pHandle = BASS_NULL;
 	bIsOnline = false;
 
-	if(pthSeeker != NULL)
+	if(!ISNULLPTR(pthSeeker))
 	{
 		pthSeeker->join();
 		delete pthSeeker;
@@ -142,7 +142,7 @@ int TChannel::LoadURL(const char *sURL, bass_flag eFlags)
 {
 	lock_guard<mutex> Lock(MutexLoadingLock);
 
-	if(sURL == NULL)
+	if(ISNULLPTR(sURL))
 	{
 		lock_guard<mutex> Lock2(MutexLock);
 		RemoveInternal();
@@ -193,7 +193,7 @@ int TChannel::LoadFile(const char *sURL, bass_flag eFlags)
 {
 	lock_guard<mutex> Lock(MutexLoadingLock);
 
-	if(sURL == NULL)
+	if(ISNULLPTR(sURL))
 	{
 		lock_guard<mutex> Lock2(MutexLock);
 		RemoveInternal();
@@ -289,7 +289,7 @@ void TChannel::Remove()
 		BASS_MusicFree(pHandle);
 		BASS_StreamFree(pHandle);
 
-		if(sFilename != NULL)
+		if(!ISNULLPTR(sFilename))
 		{
 			delete [] sFilename;
 			sFilename = NULL;
@@ -302,7 +302,7 @@ void TChannel::Remove()
 		pthSeekerTmp = pthSeeker;
 	}
 
-	if(pthSeekerTmp != NULL)
+	if(!ISNULLPTR(pthSeekerTmp))
 	{
 		pthSeekerTmp->join();
 		delete pthSeekerTmp;
@@ -545,7 +545,7 @@ void TChannel::EnableLooping(bool bLoop)
 bool TChannel::FFT(bass_flag eMode, float *pfSpectrum)
 {
 	lock_guard<mutex> Lock(MutexLock);
-	if(pfSpectrum == NULL) return false;
+	if(ISNULLPTR(pfSpectrum)) return false;
 
 	if(!IsValidInternal()) return false;
 
@@ -560,8 +560,8 @@ bool TChannel::FFT(bass_flag eMode, float *pfSpectrum)
 bool TChannel::GetLevel(WORD* piLevelLeft, WORD* piLevelRight)
 {
 	lock_guard<mutex> Lock(MutexLock);
-	if(piLevelLeft == NULL) return false;
-	if(piLevelRight == NULL) return false;
+	if(ISNULLPTR(piLevelLeft)) return false;
+	if(ISNULLPTR(piLevelRight)) return false;
 
 	if(!IsValidInternal()) return false;
 	bass_flag iState = BASS_ChannelIsActive(pHandle);
@@ -587,7 +587,7 @@ bool TChannel::GetLevelEx(float* pfLevels, float fTimeFrame)
 bool TChannel::GetLevelEx(float* pfLevels, float fTimeFrame, bool bRMS)
 {
 	lock_guard<mutex> Lock(MutexLock);
-	if(pfLevels == NULL) return false;
+	if(ISNULLPTR(pfLevels)) return false;
 
 	if(!IsValidInternal()) return false;
 	bass_flag iState = BASS_ChannelIsActive(pHandle);
@@ -633,7 +633,7 @@ void TChannel::SetTime(double fTime)
 
 	try
 	{
-		if(pthSeeker == NULL) pthSeeker = new thread(thfnSeekTo, this);
+		if(ISNULLPTR(pthSeeker)) pthSeeker = new thread(thfnSeekTo, this);
 	}
 	catch(...) // Failback
 	{
@@ -727,7 +727,7 @@ const char* TChannel::GetFileName()
 	lock_guard<mutex> Lock(MutexLock);
 	if(!IsValidInternal()) return "NULL";
 
-	if(sFilename == NULL)
+	if(ISNULLPTR(sFilename))
 	{
 		filename = "NULL";
 		return filename;
@@ -742,7 +742,7 @@ const char* TChannel::GetFileName()
 	BASS_ChannelGetInfo(pHandle, &info);
 
 	filename = info.filename;
-	if(filename == NULL) return "NULL";
+	if(ISNULLPTR(filename)) return "NULL";
 
 	return filename;
 }
@@ -820,6 +820,17 @@ BYTE TChannel::GetBitsPerSample()
 	BASS_ChannelGetInfo(pHandle, &info);
 
 	return info.origres & 0xFF;
+}
+
+float TChannel::GetAverageBitRate()
+{
+	float fBitRate;
+
+	lock_guard<mutex> Lock(MutexLock);
+	if(!IsValidInternal()) return 0;
+
+	BASS_ChannelGetAttribute(pHandle, BASS_ATTRIB_BITRATE, &fBitRate);
+	return fBitRate;
 }
 
 bool TChannel::GetPos(BASS_3DVECTOR* pvPos, BASS_3DVECTOR* pvDir, BASS_3DVECTOR* pvVel)

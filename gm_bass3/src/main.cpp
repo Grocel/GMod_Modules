@@ -10,10 +10,7 @@ int Init(lua_State* state)
 {
 	g_pListPendingCallbacks = new SyncList<TChannelCallbackData *>;
 	g_pListRunningThreads = new SyncList<thread *>;
-	g_pfFFTBuffer = new float[32768];
-	g_ProxySettings = new char[16384];
-	g_ProxySettings[0] = 0;
-	g_ProxySettings[16383] = 0;
+	g_pfFFTBuffer = new float[65536];
 
 	try
 	{
@@ -59,26 +56,20 @@ int Init(lua_State* state)
 		BASS_SetConfig(BASS_CONFIG_VERIFY, 0x8000); // 32 kB
 		BASS_SetConfig(BASS_CONFIG_VERIFY_NET, 0x8000); // 32 kB
 
-		g_oldProxySettings = (char*)BASS_GetConfigPtr(BASS_CONFIG_NET_PROXY);
-		BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY, g_oldProxySettings);
-
-		if(g_oldProxySettings != NULL && g_oldProxySettings != nullptr)
+		g_oldAgentSettings = "";
+		g_oldProxySettings = "";
+		char* cSettings = NULL;
+			
+		cSettings = (char*)BASS_GetConfigPtr(BASS_CONFIG_NET_AGENT);
+		if(!ISNULLPTR(cSettings))
 		{
-			int iLen = strlen(g_oldProxySettings) + 1;
-			if(iLen >= 16384 || iLen < 0)
-			{
-				g_ProxySettings[0] = 0;	
-			}
-			else
-			{
-				UTIL::safe_cpy(g_ProxySettings, g_oldProxySettings, iLen);
-				g_ProxySettings[16383] = 0;
-			}
+			g_oldAgentSettings = string(cSettings);
 		}
-		else
+
+		cSettings = (char*)BASS_GetConfigPtr(BASS_CONFIG_NET_PROXY);
+		if(!ISNULLPTR(cSettings))
 		{
-			g_ProxySettings[0] = 0;
-			g_oldProxySettings = NULL;
+			g_oldProxySettings = string(cSettings);
 		}
 
 		BASS_Start();
@@ -233,7 +224,7 @@ GMOD_MODULE_CLOSE()
 {
 	g_CLOSING = true;
 
-	if(g_thCleanUp != NULL)
+	if(!ISNULLPTR(g_thCleanUp))
 	{
 		g_thCleanUp->join();
 		delete g_thCleanUp;
@@ -243,35 +234,29 @@ GMOD_MODULE_CLOSE()
 	UTIL::ClearPendingChannels(state);
 	LUAINTERFACE::UnrefGlobalReferences(state);
 
-	if(g_pListRunningThreads != NULL)
+	if(!ISNULLPTR(g_pListRunningThreads))
 	{
 		delete g_pListRunningThreads;
 		g_pListRunningThreads = NULL;
 	}
 
-	if(g_pListPendingCallbacks != NULL)
+	if(!ISNULLPTR(g_pListPendingCallbacks))
 	{
 		delete g_pListPendingCallbacks;
 		g_pListPendingCallbacks = NULL;
 	}
 
-	if(g_pfFFTBuffer != NULL)
+	if(!ISNULLPTR(g_pfFFTBuffer))
 	{
 		delete [] g_pfFFTBuffer;
 		g_pfFFTBuffer = NULL;
 	}
 
-	if(g_ProxySettings != NULL)
-	{
-		delete [] g_ProxySettings;
-		g_ProxySettings = NULL;
-	}
-
 #ifdef _WIN32
 	BASS_SetEAXParameters(EAX_PRESET_GENERIC);
 #endif
-
-	BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY, g_oldProxySettings);
+	BASS_SetConfigPtr(BASS_CONFIG_NET_AGENT, g_oldAgentSettings.c_str());
+	BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY, g_oldProxySettings.c_str());
 
 	if(g_SELFLOADED)
 	{

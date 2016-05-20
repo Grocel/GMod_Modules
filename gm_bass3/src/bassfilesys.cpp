@@ -47,30 +47,30 @@ IFileSystem* g_pFileSystem = NULL;
 // CALLBACKs start
 void CALLBACK StreamCloseProc(void *param)
 {
-	if(g_pFileSystem == NULL) return;
+	if(ISNULLPTR(g_pFileSystem)) return;
 
 	FileHandle_t pFile = (FileHandle_t) param;
-	if(pFile == NULL) return;
+	if(ISNULLPTR(pFile)) return;
 
 	g_pFileSystem->Close(pFile); // close the file
 }
 
 QWORD CALLBACK StreamLenProc(void *param)
 {
-	if(g_pFileSystem == NULL) return 0;
+	if(ISNULLPTR(g_pFileSystem)) return 0;
 
 	FileHandle_t pFile = (FileHandle_t) param;
-	if(pFile == NULL) return 0;
+	if(ISNULLPTR(pFile)) return 0;
 
     return (QWORD)g_pFileSystem->Size(pFile); // return the file length
 }
 
 DWORD CALLBACK StreamReadProc(void *buffer, DWORD length, void *param)
 {
-	if(g_pFileSystem == NULL) return -1;
+	if(ISNULLPTR(g_pFileSystem)) return -1;
 
 	FileHandle_t pFile = (FileHandle_t) param;
-	if(pFile == NULL) return -1;
+	if(ISNULLPTR(pFile)) return -1;
 
 	if(g_pFileSystem->EndOfFile(pFile)) 
 	{
@@ -82,10 +82,10 @@ DWORD CALLBACK StreamReadProc(void *buffer, DWORD length, void *param)
 
 BOOL CALLBACK StreamSeekProc(QWORD offset, void *param)
 {
-	if(g_pFileSystem == NULL) return false;
+	if(ISNULLPTR(g_pFileSystem)) return false;
 
 	FileHandle_t pFile = (FileHandle_t) param;
-	if(pFile == NULL) return false;
+	if(ISNULLPTR(pFile)) return false;
 
 	g_pFileSystem->Seek(pFile, (int)offset, FILESYSTEM_SEEK_HEAD);
 
@@ -101,7 +101,7 @@ namespace BASSFILESYS
 {
 	bool Init()
 	{
-		if(g_pFileSystem != NULL) return true;
+		if(!ISNULLPTR(g_pFileSystem)) return true;
 
 		char err[256];
 		err[0] = 0;
@@ -111,14 +111,14 @@ namespace BASSFILESYS
 		{
 			if(g_IsDedicatedServer)
 			{
-				if(FILESYSTEM_LIB_DEDISV == NULL) return false;
+				if(ISNULLPTR(FILESYSTEM_LIB_DEDISV)) return false;
 
 				MODULE_HEADER FileSystemExporter = NULL;
 				FileSystemExporter = MODULE_LOAD(FILESYSTEM_LIB_DEDISV MODULE_LOAD_FLAGS);
-				if(FileSystemExporter == NULL || FileSystemExporter == nullptr)
+				if(ISNULLPTR(FileSystemExporter))
 				{
 					char* error = MODULE_ERROR;
-					if(error != NULL)
+					if(!ISNULLPTR(error))
 						Warning("BASS Filesystem error, Error getting the " FILESYSTEM_LIB_DEDISV " plugin:\n%s\n", error);
 					else
 						Warning("BASS Filesystem error, Error getting the " FILESYSTEM_LIB_DEDISV " plugin.\n");
@@ -127,10 +127,10 @@ namespace BASSFILESYS
 				}
 			
 				GetFilesystem_t GetFilesystem = (GetFilesystem_t)MODULE_IMPORT(FileSystemExporter, "GetFilesystem");
-				if(GetFilesystem == NULL || GetFilesystem == nullptr)
+				if(ISNULLPTR(GetFilesystem))
 				{
 					char* error = MODULE_ERROR;
-					if(error != NULL)
+					if(!ISNULLPTR(error))
 						Warning("BASS Filesystem error, Error getting the GetFilesystem function of the " FILESYSTEM_LIB_DEDISV " plugin:\n%s\n", error);
 					else
 						Warning("BASS Filesystem error, Error getting the GetFilesystem function of the " FILESYSTEM_LIB_DEDISV " plugin.\n");
@@ -143,7 +143,7 @@ namespace BASSFILESYS
 				MODULE_FREE(FileSystemExporter);
 				g_pFileSystem = GetFilesystem();
 
-				if(g_pFileSystem == NULL || g_pFileSystem == nullptr)
+				if(ISNULLPTR(g_pFileSystem))
 				{
 					Warning("BASS Filesystem error, Error getting the IFileSystem " FILESYSTEM_INTERFACE_VERSION_GMOD " interface from the " FILESYSTEM_LIB_DEDISV " plugin.\n");
 					g_pFileSystem = NULL;
@@ -157,7 +157,7 @@ namespace BASSFILESYS
 			}
 			else
 			{
-				if(FILESYSTEM_LIB == NULL) return false;
+				if(ISNULLPTR(FILESYSTEM_LIB)) return false;
 
 				CSysModule* FileSystemFactoryDLL = NULL;
 				if (!Sys_LoadInterface(FILESYSTEM_LIB, FILESYSTEM_INTERFACE_VERSION_GMOD, &FileSystemFactoryDLL, (void**)&g_pFileSystem))
@@ -167,7 +167,7 @@ namespace BASSFILESYS
 					return false;
 				}
 
-				if(g_pFileSystem == NULL && g_pFileSystem == nullptr)
+				if(ISNULLPTR(g_pFileSystem))
 				{
 					Warning("BASS Filesystem error, Error getting IFileSystem " FILESYSTEM_INTERFACE_VERSION_GMOD " interface from the " FILESYSTEM_LIB " factory.\n");
 					g_pFileSystem = NULL;
@@ -212,18 +212,18 @@ namespace BASSFILESYS
 		*ppHandle = BASS_NULL;
 		*piErr = BASS_ERROR_FILEOPEN;
 
-		if(sFile == NULL) return false;
-		if(ppHandle == NULL) return false;
-		if(piErr == NULL) return false;
+		if(ISNULLPTR(sFile)) return false;
+		if(ISNULLPTR(ppHandle)) return false;
+		if(ISNULLPTR(piErr)) return false;
 
 		*piErr = BASS_ERROR_FILESYSTEM;
-		if(g_pFileSystem == NULL) return false;
+		if(ISNULLPTR(g_pFileSystem)) return false;
 		bass_p pHandle = BASS_NULL;
 		int iErr = -1;
 		FileHandle_t fh = NULL;
 	
 		fh = g_pFileSystem->Open(sFile, "rb", "GAME");
-		if(fh != NULL)
+		if(!ISNULLPTR(fh))
 		{
 			pHandle = BASS_StreamCreateFileUser(STREAMFILE_NOBUFFER, eFlags, &StreamDataTable, fh);
 			iErr = BASS_ErrorGetCode();
@@ -231,7 +231,7 @@ namespace BASSFILESYS
 			if(iErr == BASS_ERROR_FILEFORM)
 			{
 				fh = g_pFileSystem->Open(sFile, "rb", "GAME");
-				if(fh != NULL)
+				if(!ISNULLPTR(fh))
 				{
 					int iLength = (int)g_pFileSystem->Size(fh);
 

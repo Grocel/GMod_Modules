@@ -22,7 +22,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#define GM_BASS_VERSION 7
+#define GM_BASS_VERSION 8
 
 #define ENUM_TO_VALUE(ENUM, VALUE, VAR) case ENUM: VAR = VALUE; break
 
@@ -81,8 +81,9 @@ extern thread* g_thCleanUp;
 extern SyncList<TChannelCallbackData *>* g_pListPendingCallbacks;
 extern SyncList<thread *>* g_pListRunningThreads;
 extern float* g_pfFFTBuffer;
-extern char* g_ProxySettings;
-extern char* g_oldProxySettings;
+
+extern string g_oldAgentSettings;
+extern string g_oldProxySettings;
 
 #endif
 

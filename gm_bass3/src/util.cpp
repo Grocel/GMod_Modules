@@ -14,13 +14,13 @@
 void thfnLoadStream(TChannelThreadArgs ThreadArgs)
 {
 	if(!g_IntialTickHappend) return;
-	if(g_thCleanUp == NULL) return;
-	if(g_pListPendingCallbacks == NULL) return;
+	if(ISNULLPTR(g_thCleanUp)) return;
+	if(ISNULLPTR(g_pListPendingCallbacks)) return;
 
 	TChannel* pChannel = ThreadArgs.pChannel;
 	bool bIsRecycledChannel;
 
-	if(pChannel == NULL)
+	if(ISNULLPTR(pChannel))
 	{
 		bIsRecycledChannel = false;
 		pChannel = new TChannel();
@@ -39,7 +39,7 @@ void thfnLoadStream(TChannelThreadArgs ThreadArgs)
 		pChannel = NULL;
 	}
 
-	if(pChannel != NULL) pChannel->Update(5000);
+	if(!ISNULLPTR(pChannel)) pChannel->Update(5000);
 
 	TChannelCallbackData* pCallbackData = new TChannelCallbackData();
 	pCallbackData->bIsRecycledChannel = bIsRecycledChannel;
@@ -120,7 +120,7 @@ namespace UTIL
 		bool RemoveChars(string &sInput, const char* sCharsToRemove)
 		{
 			if(sInput == "") return false;
-			if(sCharsToRemove == NULL) return false;
+			if(ISNULLPTR(sCharsToRemove)) return false;
 
 			for(unsigned int i = 0; i < strlen(sCharsToRemove); i++)
 			{
@@ -151,8 +151,8 @@ namespace UTIL
 				if(sFind == "") continue;
 
 				iFound++;
-				if(func == NULL) continue;
-				if(func == nullptr) continue;
+				if(ISNULLPTR(func)) continue;
+				
 				iFound--;
 
 				if(!func(sFind, iFound, pUserData)) continue;
@@ -164,12 +164,7 @@ namespace UTIL
 
 		bool ToNumber(const char *pString, lua_n &fNumber)
 		{
-			if (pString == NULL) {
-				fNumber = 0;
-				return false;
-			}
-
-			if (pString == nullptr) {
+			if (ISNULLPTR(pString)) {
 				fNumber = 0;
 				return false;
 			}
@@ -222,8 +217,8 @@ namespace UTIL
 	bool LoadStream(TChannelThreadArgs& ThreadArgs, bool bNotThreaded)
 	{
 		if(!g_IntialTickHappend) return false;
-		if(g_pListPendingCallbacks == NULL) return false;
-		if(g_pListRunningThreads == NULL) return false;
+		if(ISNULLPTR(g_pListPendingCallbacks)) return false;
+		if(ISNULLPTR(g_pListRunningThreads)) return false;
 
 		// Prevent overflow
 		if(g_pListPendingCallbacks->getSize() > 512) return false;
@@ -234,7 +229,7 @@ namespace UTIL
 			return true;
 		}
 
-		if(g_thCleanUp == NULL) return false;
+		if(ISNULLPTR(g_thCleanUp)) return false;
 
 		try
 		{
@@ -285,12 +280,12 @@ namespace UTIL
 
 	void ClearLoadingThreads()
 	{
-		if(g_pListRunningThreads == NULL) return;
+		if(ISNULLPTR(g_pListRunningThreads)) return;
 
 		while(g_pListRunningThreads->getSize() > 0)
 		{
 			thread *thLoadStream = g_pListRunningThreads->remove();
-			if(thLoadStream == NULL) continue;
+			if(ISNULLPTR(thLoadStream)) continue;
 
 			thLoadStream->join();
 			delete thLoadStream;
@@ -299,12 +294,12 @@ namespace UTIL
 
 	void ClearPendingChannels(lua_State* state)
 	{
-		if(g_pListPendingCallbacks == NULL) return;
+		if(ISNULLPTR(g_pListPendingCallbacks)) return;
 
 		while(g_pListPendingCallbacks->getSize() > 0)
 		{
 			TChannelCallbackData* pCallbackData = g_pListPendingCallbacks->remove();
-			if(pCallbackData == NULL) continue;
+			if(ISNULLPTR(pCallbackData)) continue;
 
 			TChannel* pChannel = pCallbackData->pChannel;
 			int iError = pCallbackData->iError;
