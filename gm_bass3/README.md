@@ -97,7 +97,8 @@ Also never pass the numbers directly, as they could be changed too.
 | BASS3.ENUM.FFT_2048  | 3     | 1024 levels for normal, 4096 levels for complex. |
 | BASS3.ENUM.FFT_4096  | 4     | 2048 levels for normal, 8192 levels for complex. |
 | BASS3.ENUM.FFT_8192  | 5     | 4096 levels for normal, 16384 levels for complex. |
-| BASS3.ENUM.FFT_16384 | 6     | 8192 levels for normal, 32768 levels for complex. |
+| BASS3.ENUM.FFT_16384 | 6     | 16384 levels for normal, 32768 levels for complex. |
+| BASS3.ENUM.FFT_32768 | 7     | 32768 levels for normal, 65536 levels for complex. |
 
 
 ##### MODE_\*
@@ -133,17 +134,19 @@ Also never pass the numbers directly, as they could be changed too.
 | BASS3.DecodeError()   | ``number Errorcode``                                                                           | ``string Errorstring``                                                  | Returns the description of the given errorcode. |
 | BASS3.PlayFile()      | ``string Path``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``function Callback``          | ``bool Success``                                                        | Play a local file at the given path relative to the garrysmod content folder.<br><br>The Flags argument accepts a string as like as sound.PlayFile() does and the *recommend* MODE_\*-Enums.<br><br>The Callback is called after the loading is done.<br>Its aguments are:<br>``IBASS3Channel Channel``<br>``number Errorcode``<br>``string Errorstring``<br><br>Returns true when the loading process was successfully started. |
 | BASS3.PlayURL()       | ``string URL``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``function Callback``           | ``bool Success``                                                        | Play an online file or stream at the given URL.<br><br>Basically it works as same as BASS3.PlayFile(). |
+| BASS3.GetAgent()      | ``nil``                                                                                        | ``string UserAgent``                                                    | Return the current user agent string. |
+| BASS3.SetAgent()      | ``string UserAgent = ""``                                                                      | ``nil``                                                                 | Set the user agent string. Nil or an empty string as UserAgent will set the user agent back to the default one. |
 | BASS3.GetEAX()        | ``nil``                                                                                        | ``number ENV``<br><br>``number Volume``<br><br>``number Decay``<br><br>``number Damp`` | **Clientside, Broken/WIP**<br><br>Returns the values of the current EAX effect. |
 | BASS3.SetEAX()        | ``[number ENV]``<br><br>``[number Volume]``<br><br>``[number Decay]``<br><br>``[number Damp]`` | ``bool Success``                                                        | **Clientside, Broken/WIP**<br><br>Applies an EAX effect to all BASS sounds.<br>Unfilled arguments will not be changed.<br><br>Only has an effect on 3D channels.<br>Returns true on success.<br><br>Also see:<br>[BASS_SetEAXParameters()](http://www.un4seen.com/doc/#bass/BASS_SetEAXParameters.html)<br>[BASS_ATTRIB_EAXMIX](http://www.un4seen.com/doc/#bass/BASS_ATTRIB_EAXMIX.html) |
 | BASS3.GetProxy()      | ``nil``                                                                                        | ``string IP``<br><br>``number Port``<br><br>``string user``<br><br>``string password`` | Return the current Proxy settings. |
-| BASS3.SetProxy()      | ``string IP = ""``<br><br>``[number Port]``<br><br>``string user = ""``<br><br>``string password = ""`` | ``nil``                                                        | Set the Proxy settings.<br><br>When the IP is set and not an empty string, you will have to specify the port.<br><br>Not giving the user name will create an anonymous connection.<br><br>When the proxy connection is not valid, every online stream will yield this error:<br>``BASS3.ENUM.ERROR_UNKNOWN`` |
+| BASS3.SetProxy()      | ``string IP = ""``<br><br>``[number Port]``<br><br>``string user = ""``<br><br>``string password = ""`` | ``nil``                                                        | Set the proxy settings.<br><br>When the IP is set and not an empty string, you will have to specify the port.<br><br>Not giving the user name will create an anonymous connection.<br><br>When the proxy connection is not valid, every online stream will yield this error:<br>``BASS3.ENUM.ERROR_UNKNOWN`` |
 
 
 ##### Variables
 | Name                | Value   | Description |
 | ------------------- | ------- | ----------- |
-| BASS3.ModuleVersion | 7       | Version of gm_bass3. |
-| BASS3.Version       | 2041100 | Version of the BASS sound engine. |
+| BASS3.ModuleVersion | 8       | Version of gm_bass3. |
+| BASS3.Version       | 2041200 | Version of the BASS sound engine. |
 
 
 #### IBASS3Channel object
@@ -163,6 +166,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:FFTComplex()        | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false`` | ``number Count`` | Similar to BASS3Channel:FFT(), but with different more complete data.<br><br>The given table is filled with complex numbers.<br><br>The real parts are in uneven indexes, while the imaginary parts are in even indexes.<br>So the first index is the real part of the first complex number.<br><br>Returned values: -1 ... 1 |
 | IBASS3Channel:Get3DCone()         | ``nil`` | ``float InnerAngle``<br><br>``float OuterAngle``<br><br>``float OuterVolume`` | **Clientside**<br><br>Returns 3D cone of the sound channel. |
 | IBASS3Channel:Get3DFadeDistance() | ``nil`` | ``float Min``<br><br>``float Max``                        | **Clientside**<br><br>Returns 3D fade distances of a sound channel. |
+| IBASS3Channel:GetAverageBitRate() | ``nil``                                  | ``number kbps``          | Returns the average bit rate in kilobits per second. |
 | IBASS3Channel:GetBalance()        | ``nil``                                  | ``float Balance``        | Returns the current sound balance. |
 | IBASS3Channel:GetBitsPerSample()  | ``nil``                                  | ``number Bits``          | Returns the bit count per sample. |
 | IBASS3Channel:GetEAXMix()         | ``nil``                                  | ``float DryWetRatio``    | **Clientside, Broken/WIP**<br><br>Returns the Dry/Wet ratio in the EAX mix. |
