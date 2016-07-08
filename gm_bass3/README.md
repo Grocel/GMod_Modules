@@ -181,7 +181,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:GetTag()            | ``TAG_*-Enum Type``<br><br>``[table Tags]`` | ``table Tags`` | Returns the channel tags to a table.<br><br>The table is indexed by string or numbers depending on the given type.<br><br>If you pass the optional table, it will change and return this instead of creating a one. Useful for recycling. |
 | IBASS3Channel:GetTime()           | ``nil``                                  | ``float TimePos``        | Returns the current time position in seconds. |
 | IBASS3Channel:GetVolume()         | ``nil``                                  | ``float Volume``         | Returns the current volume. |
-| IBASS3Channel:Is3D()              | ``nil``                                  | ``bool Has3DMode``       | **Clientside**<br><br>Returns if the channel was with 3D mode.<br><br>3D related methods need this to be true for taking effects. |
+| IBASS3Channel:Is3D()              | ``nil``                                  | ``bool Has3DMode``       | **Clientside**<br><br>Returns if the channel was created with 3D mode.<br><br>3D related methods need this to be true for taking effects. |
 | IBASS3Channel:IsBlockStreamed()   | ``nil``                                  | ``bool BlockStreamed``   | Returns if the channel is streamed in blocks. |
 | IBASS3Channel:IsEndless()         | ``nil``                                  | ``bool Endless``         | Returns if the channel is endless.<br>Usually online radios are endless. |
 | IBASS3Channel:IsLooping()         | ``nil``                                  | ``bool Looping``         | Returns if the channel is looping. |
