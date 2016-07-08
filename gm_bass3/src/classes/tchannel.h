@@ -152,6 +152,9 @@ public:
 	bool Get3DCone( DWORD* piInnerAngle, DWORD* piOuterAngle );
 	void Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle );
 
+	bool Get3DEnabled();
+	void Set3DEnabled(bool bEnabled);
+
 	float GetEAXMix();
 	void SetEAXMix(float fMix);
 };

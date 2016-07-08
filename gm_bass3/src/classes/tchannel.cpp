@@ -887,7 +887,7 @@ void TChannel::Set3DFadeDistance( float fMin, float fMax )
 	lock_guard<mutex> Lock(MutexLock);
 
 	if(!Is3DInternal()) return;
-	BASS_ChannelSet3DAttributes(pHandle, BASS_3DMODE_NORMAL, fMin, fMax, BASS_NO_CHANGE, BASS_NO_CHANGE, BASS_NO_CHANGE);
+	BASS_ChannelSet3DAttributes(pHandle, BASS_NO_CHANGE, fMin, fMax, BASS_NO_CHANGE, BASS_NO_CHANGE, BASS_NO_CHANGE);
 	BASS_Apply3D();
 }
 
@@ -914,7 +914,7 @@ void TChannel::Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle, float fOuterVolu
 	lock_guard<mutex> Lock(MutexLock);
 
 	if(!Is3DInternal()) return;
-	BASS_ChannelSet3DAttributes(pHandle, BASS_3DMODE_NORMAL, BASS_NO_CHANGE, BASS_NO_CHANGE, iInnerAngle, iOuterAngle, fOuterVolume);
+	BASS_ChannelSet3DAttributes(pHandle, BASS_NO_CHANGE, BASS_NO_CHANGE, BASS_NO_CHANGE, iInnerAngle, iOuterAngle, fOuterVolume);
 	BASS_Apply3D();
 }
 
@@ -926,6 +926,27 @@ bool TChannel::Get3DCone( DWORD* piInnerAngle, DWORD* piOuterAngle )
 void TChannel::Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle ) 
 {
 	Set3DCone( iInnerAngle, iOuterAngle, BASS_NO_CHANGE );
+}
+
+bool TChannel::Get3DEnabled()
+{
+	lock_guard<mutex> Lock(MutexLock);
+
+	if (!Is3DInternal()) return false;
+
+	DWORD iMode = BASS_3DMODE_OFF;
+	BASS_ChannelGet3DAttributes(pHandle, &iMode, NULL, NULL, NULL, NULL, NULL);
+
+	return (iMode != BASS_3DMODE_OFF);
+}
+
+void TChannel::Set3DEnabled(bool bEnabled)
+{
+	lock_guard<mutex> Lock(MutexLock);
+
+	if (!Is3DInternal()) return;
+	BASS_ChannelSet3DAttributes(pHandle, bEnabled ? BASS_3DMODE_NORMAL : BASS_3DMODE_OFF, BASS_NO_CHANGE, BASS_NO_CHANGE, BASS_NO_CHANGE, BASS_NO_CHANGE, BASS_NO_CHANGE);
+	BASS_Apply3D();
 }
 
 float TChannel::GetEAXMix()

@@ -135,6 +135,9 @@ namespace LUAFUNC
 			LUA_FUNCTION(Get3DCone);
 			LUA_FUNCTION(Set3DCone);
 
+			LUA_FUNCTION(Get3DEnabled);
+			LUA_FUNCTION(Set3DEnabled);
+
 			LUA_FUNCTION(GetEAXmix);
 			LUA_FUNCTION(SetEAXmix);
 		}

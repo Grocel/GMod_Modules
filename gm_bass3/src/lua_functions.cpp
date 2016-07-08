@@ -1696,6 +1696,38 @@ namespace LUAFUNC
 				return 0;
 			}
 
+			LUA_FUNCTION(Get3DEnabled)
+			{
+				LUA->CheckType(1, TYPE_CHANNEL);
+				TChannel* pChannel = GETCHANNEL(1);
+				if (ISNULLPTR(pChannel))
+				{
+					LUA->PushBool(false);
+					return 1;
+				}
+
+				LUA->PushBool(pChannel->Get3DEnabled());
+				return 1;
+			}
+
+			LUA_FUNCTION(Set3DEnabled)
+			{
+				LUA->CheckType(1, TYPE_CHANNEL);
+				TChannel* pChannel = GETCHANNEL(1);
+				if (ISNULLPTR(pChannel)) return 0;
+
+				bool bEnabled = false;
+
+				if (!ISNIL(2))
+				{
+					LUA->CheckType(2, Type::BOOL);
+					bEnabled = LUA->GetBool(2);
+				}
+
+				pChannel->Set3DEnabled(bEnabled);
+				return 0;
+			}
+
 			LUA_FUNCTION(GetEAXmix)
 			{
 				LUA->CheckType(1, TYPE_CHANNEL);

@@ -145,7 +145,7 @@ Also never pass the numbers directly, as they could be changed too.
 ##### Variables
 | Name                | Value   | Description |
 | ------------------- | ------- | ----------- |
-| BASS3.ModuleVersion | 8       | Version of gm_bass3. |
+| BASS3.ModuleVersion | 9       | Version of gm_bass3. |
 | BASS3.Version       | 2041200 | Version of the BASS sound engine. |
 
 
@@ -164,8 +164,9 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:EnableLooping()     | ``nil``                                  | ``bool Loop``            | Enable or disable Looping. |
 | IBASS3Channel:FFT()               | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false``<br><br>``bool AsDecibel = false`` | ``number Count`` | It fills the given table with the first half of the current FFT spectrum.<br><br>Returned values: 0 ... 1<br>OR: -1000 db ... 0 db<br><br>The FFT_*-Enum defines the size of the data. The data size is returned.<br><br>The values are returned as decibel base 10 figures if AsDecibel is true.<br><br>Also see:<br>[IGModAudioChannel:FFT()](http://wiki.garrysmod.com/page/IGModAudioChannel/FFT)<br>[BASS_ChannelGetData()](http://www.un4seen.com/doc/#bass/BASS_ChannelGetData.html) |
 | IBASS3Channel:FFTComplex()        | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false`` | ``number Count`` | Similar to BASS3Channel:FFT(), but with different more complete data.<br><br>The given table is filled with complex numbers.<br><br>The real parts are in uneven indexes, while the imaginary parts are in even indexes.<br>So the first index is the real part of the first complex number.<br><br>Returned values: -1 ... 1 |
-| IBASS3Channel:Get3DCone()         | ``nil`` | ``float InnerAngle``<br><br>``float OuterAngle``<br><br>``float OuterVolume`` | **Clientside**<br><br>Returns 3D cone of the sound channel. |
-| IBASS3Channel:Get3DFadeDistance() | ``nil`` | ``float Min``<br><br>``float Max``                        | **Clientside**<br><br>Returns 3D fade distances of a sound channel. |
+| IBASS3Channel:Get3DCone()         | ``nil``                                  | ``float InnerAngle``<br><br>``float OuterAngle``<br><br>``float OuterVolume`` | **Clientside**<br><br>Returns 3D cone of the sound channel. |
+| IBASS3Channel:Get3DEnabled()      | ``nil``                                  | ``bool Enabled3D``       | **Clientside**<br><br>Returns if the channel is played as 3D world sound. |
+| IBASS3Channel:Get3DFadeDistance() | ``nil``                                  | ``float Min``<br><br>``float Max`` | **Clientside**<br><br>Returns 3D fade distances of a sound channel. |
 | IBASS3Channel:GetAverageBitRate() | ``nil``                                  | ``number kbps``          | Returns the average bit rate in kilobits per second. |
 | IBASS3Channel:GetBalance()        | ``nil``                                  | ``float Balance``        | Returns the current sound balance. |
 | IBASS3Channel:GetBitsPerSample()  | ``nil``                                  | ``number Bits``          | Returns the bit count per sample. |
@@ -180,7 +181,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:GetTag()            | ``TAG_*-Enum Type``<br><br>``[table Tags]`` | ``table Tags`` | Returns the channel tags to a table.<br><br>The table is indexed by string or numbers depending on the given type.<br><br>If you pass the optional table, it will change and return this instead of creating a one. Useful for recycling. |
 | IBASS3Channel:GetTime()           | ``nil``                                  | ``float TimePos``        | Returns the current time position in seconds. |
 | IBASS3Channel:GetVolume()         | ``nil``                                  | ``float Volume``         | Returns the current volume. |
-| IBASS3Channel:Is3D()              | ``nil``                                  | ``bool 3D``              | **Clientside**<br><br>Returns if the channel is in 3D mode. |
+| IBASS3Channel:Is3D()              | ``nil``                                  | ``bool Has3DMode``       | **Clientside**<br><br>Returns if the channel was with 3D mode.<br><br>3D related methods need this to be true for taking effects. |
 | IBASS3Channel:IsBlockStreamed()   | ``nil``                                  | ``bool BlockStreamed``   | Returns if the channel is streamed in blocks. |
 | IBASS3Channel:IsEndless()         | ``nil``                                  | ``bool Endless``         | Returns if the channel is endless.<br>Usually online radios are endless. |
 | IBASS3Channel:IsLooping()         | ``nil``                                  | ``bool Looping``         | Returns if the channel is looping. |
@@ -191,7 +192,8 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:Play()              | ``bool Restart = false``                 | ``nil``                  | Plays the channel.<br>Restarts it if the given bool is true. |
 | IBASS3Channel:Remove()            | ``nil``                                  | ``nil``                  | Stops the channel and frees it. |
 | IBASS3Channel:Set3DCone()         | ``float InnerAngle = -1``<br><br>``float OuterAngle = -1``<br><br>``float OuterVolume = -1`` | ``nil`` | **Clientside**<br><br>Sets 3D cone of the sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
-| IBASS3Channel:Set3DFadeDistance() | ``float Min = -1``<br><br>``float Max = -1``       | ``nil``        | **Clientside**<br><br>Sets 3D fade distances of a sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
+| IBASS3Channel:Set3DEnabled()      | ``bool Enabled3D``                       | ``nil``                  | **Clientside**<br><br>Enables or disables 3D playback for a channel.<br><br>To take effekt, the channel must be created with 3D mode. (Checked with IBASS3Channel:Is3D()) |
+| IBASS3Channel:Set3DFadeDistance() | ``float Min = -1``<br><br>``float Max = -1`` | ``nil``              | **Clientside**<br><br>Sets 3D fade distances of a sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
 | IBASS3Channel:SetBalance()        | ``float Balance``                        | ``nil``                  | **Clientside**<br><br>Set the sound balance to the given value.<br><br>Balance values:<br>-1 = Left<br>0 = Center<br>1 = Right |
 | IBASS3Channel:SetEAXMix()         | ``[float DryWetRatio]``                  | ``nil``                  | **Clientside, Broken/WIP**<br><br>Sets the Dry/Wet ratio in the EAX mix. A nil or -1 resets it to automatic mixing. |
 | IBASS3Channel:SetPos()            | ``Vector Position = Vector(0,0,0)``<br><br>``Vector Direction = Vector(0,0,0)``<br><br>``Vector Velocity = Vector(0,0,0)`` | ``nil`` | **Clientside**<br><br>Sets the position, direction and velocity of sound channel in case the channel has a 3d option set. |

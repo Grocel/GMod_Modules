@@ -302,6 +302,9 @@ namespace LUAINTERFACE
 				ADDMETHOD(IBASS3Channel, Get3DCone);
 				ADDMETHOD(IBASS3Channel, Set3DCone);
 
+				ADDMETHOD(IBASS3Channel, Get3DEnabled);
+				ADDMETHOD(IBASS3Channel, Set3DEnabled);
+
 				ADDMETHOD(IBASS3Channel, GetEAXmix);
 				ADDMETHOD(IBASS3Channel, SetEAXmix);
 			}
