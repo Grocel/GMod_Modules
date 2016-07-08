@@ -105,7 +105,7 @@ Also never pass the numbers directly, as they could be changed too.
 | Name                    | Value | Description |
 | ----------------------- | ----- | ----------- |
 | BASS3.ENUM.MODE_NONE    | 0     | No modes, same as "". |
-| BASS3.ENUM.MODE_3D      | 1     | Play as 3D world sound, same as "3d". |
+| BASS3.ENUM.MODE_3D      | 1     | Add a 3D flag and play as 3D world sound, same as "3d". |
 | BASS3.ENUM.MODE_LOOP    | 2     | Loop the sound, same as "loop". |
 | BASS3.ENUM.MODE_MONO    | 4     | Play in mono, same as "mono". |
 | BASS3.ENUM.MODE_NOPLAY  | 8     | Don't play on load, same as "noplay". |
@@ -181,7 +181,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:GetTag()            | ``TAG_*-Enum Type``<br><br>``[table Tags]`` | ``table Tags`` | Returns the channel tags to a table.<br><br>The table is indexed by string or numbers depending on the given type.<br><br>If you pass the optional table, it will change and return this instead of creating a one. Useful for recycling. |
 | IBASS3Channel:GetTime()           | ``nil``                                  | ``float TimePos``        | Returns the current time position in seconds. |
 | IBASS3Channel:GetVolume()         | ``nil``                                  | ``float Volume``         | Returns the current volume. |
-| IBASS3Channel:Is3D()              | ``nil``                                  | ``bool Has3DMode``       | **Clientside**<br><br>Returns if the channel was created with 3D mode.<br><br>3D related methods need this to be true for taking effects. |
+| IBASS3Channel:Is3D()              | ``nil``                                  | ``bool Has3DFlag``       | **Clientside**<br><br>Returns if the channel was created with 3D flag.<br><br>3D related methods need a set 3D flag for taking effects. |
 | IBASS3Channel:IsBlockStreamed()   | ``nil``                                  | ``bool BlockStreamed``   | Returns if the channel is streamed in blocks. |
 | IBASS3Channel:IsEndless()         | ``nil``                                  | ``bool Endless``         | Returns if the channel is endless.<br>Usually online radios are endless. |
 | IBASS3Channel:IsLooping()         | ``nil``                                  | ``bool Looping``         | Returns if the channel is looping. |
@@ -192,7 +192,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:Play()              | ``bool Restart = false``                 | ``nil``                  | Plays the channel.<br>Restarts it if the given bool is true. |
 | IBASS3Channel:Remove()            | ``nil``                                  | ``nil``                  | Stops the channel and frees it. |
 | IBASS3Channel:Set3DCone()         | ``float InnerAngle = -1``<br><br>``float OuterAngle = -1``<br><br>``float OuterVolume = -1`` | ``nil`` | **Clientside**<br><br>Sets 3D cone of the sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
-| IBASS3Channel:Set3DEnabled()      | ``bool Enabled3D``                       | ``nil``                  | **Clientside**<br><br>Enables or disables 3D playback for a channel.<br><br>To take effekt, the channel must be created with 3D mode. (Checked with IBASS3Channel:Is3D()) |
+| IBASS3Channel:Set3DEnabled()      | ``bool Enabled3D``                       | ``nil``                  | **Clientside**<br><br>Enables or disables 3D playback for a channel.<br><br>To take effekt, the channel must be created with a 3D flag. (Checked with IBASS3Channel:Is3D()) |
 | IBASS3Channel:Set3DFadeDistance() | ``float Min = -1``<br><br>``float Max = -1`` | ``nil``              | **Clientside**<br><br>Sets 3D fade distances of a sound channel.<br><br>A value set to nil or -1 will remain unchanged. |
 | IBASS3Channel:SetBalance()        | ``float Balance``                        | ``nil``                  | **Clientside**<br><br>Set the sound balance to the given value.<br><br>Balance values:<br>-1 = Left<br>0 = Center<br>1 = Right |
 | IBASS3Channel:SetEAXMix()         | ``[float DryWetRatio]``                  | ``nil``                  | **Clientside, Broken/WIP**<br><br>Sets the Dry/Wet ratio in the EAX mix. A nil or -1 resets it to automatic mixing. |
