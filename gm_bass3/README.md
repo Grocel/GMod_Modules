@@ -151,10 +151,10 @@ Also never pass the numbers directly, as they could be changed too.
 
 #### IBASS3Channel object
 This is the channel object. With this object you can change and receive information of a sound.
-All Functions are designed to match their counter parts of [IGModAudioChannel](http://wiki.garrysmod.com/page/Category:IGModAudioChannel) in their behavior.
+All methods are designed to match their counter parts of [IGModAudioChannel](http://wiki.garrysmod.com/page/Category:IGModAudioChannel) in their behavior.
 The channel can be recycled improve performance. Multiple references can lead to one channel object.
 
-However when the last reference of a channel object gets out of scope the channel will be stopped and removed. So be careful.
+However when the last reference of a channel object gets out of scope the channel will be stopped and removed. So be careful about that.
 Since all channels are muted on the server, all 3D sound, volume and balance related functions are clientside only.
 
 | Name                              | Additional arguments                     | Returned values          | Description |
