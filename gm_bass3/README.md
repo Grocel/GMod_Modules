@@ -85,20 +85,20 @@ Also never pass the numbers directly, as they could be changed too.
 
 
 ##### FFT_\*
-| Name                 | Value | Description |
-| -------------------- | ----- | ----------- |
-| BASS3.ENUM.FFT_16    | 10    | 8 levels for normal, 32 levels for complex. |
-| BASS3.ENUM.FFT_32    | 11    | 16 levels for normal, 64 levels for complex. |
-| BASS3.ENUM.FFT_64    | 12    | 32 levels for normal, 128 levels for complex. |
-| BASS3.ENUM.FFT_128   | 13    | 64 levels for normal, 256 levels for complex. |
-| BASS3.ENUM.FFT_256   | 0     | 128 levels for normal, 512 levels for complex. |
-| BASS3.ENUM.FFT_512   | 1     | 256 levels for normal, 1024 levels for complex. |
-| BASS3.ENUM.FFT_1024  | 2     | 512 levels for normal, 2048 levels for complex. |
-| BASS3.ENUM.FFT_2048  | 3     | 1024 levels for normal, 4096 levels for complex. |
-| BASS3.ENUM.FFT_4096  | 4     | 2048 levels for normal, 8192 levels for complex. |
-| BASS3.ENUM.FFT_8192  | 5     | 4096 levels for normal, 16384 levels for complex. |
-| BASS3.ENUM.FFT_16384 | 6     | 16384 levels for normal, 32768 levels for complex. |
-| BASS3.ENUM.FFT_32768 | 7     | 32768 levels for normal, 65536 levels for complex. |
+| Name                 | Value | FFT levels  | FFTComplex levels | FFTComplex levels with OutputBothSides = true |
+| -------------------- | ----- | ----------- | ----------------- | ---------- |
+| BASS3.ENUM.FFT_16    | 10    | 8           | 16                | 32         |
+| BASS3.ENUM.FFT_32    | 11    | 16          | 32                | 64         |
+| BASS3.ENUM.FFT_128   | 13    | 64          | 128               | 256        |
+| BASS3.ENUM.FFT_64    | 12    | 32          | 64                | 128        |
+| BASS3.ENUM.FFT_256   | 0     | 128         | 256               | 512        |
+| BASS3.ENUM.FFT_512   | 1     | 256         | 512               | 1024       |
+| BASS3.ENUM.FFT_1024  | 2     | 512         | 1024              | 2048       |
+| BASS3.ENUM.FFT_2048  | 3     | 1024        | 2048              | 4096       |
+| BASS3.ENUM.FFT_4096  | 4     | 2048        | 4096              | 8192       |
+| BASS3.ENUM.FFT_8192  | 5     | 4096        | 8192              | 16384      |
+| BASS3.ENUM.FFT_16384 | 6     | 8192        | 16384             | 32768      |
+| BASS3.ENUM.FFT_32768 | 7     | 16384       | 32768             | 65536      |
 
 
 ##### MODE_\*
@@ -145,7 +145,7 @@ Also never pass the numbers directly, as they could be changed too.
 ##### Variables
 | Name                | Value   | Description |
 | ------------------- | ------- | ----------- |
-| BASS3.ModuleVersion | 9       | Version of gm_bass3. |
+| BASS3.ModuleVersion | 10      | Version of gm_bass3. |
 | BASS3.Version       | 2041200 | Version of the BASS sound engine. |
 
 
@@ -163,7 +163,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:BalanceIsFading()   | ``nil``                                  | ``bool Fading``          | **Clientside**<br><br>Returns true if the sound balance is fading. |
 | IBASS3Channel:EnableLooping()     | ``nil``                                  | ``bool Loop``            | Enable or disable Looping. |
 | IBASS3Channel:FFT()               | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false``<br><br>``bool AsDecibel = false`` | ``number Count`` | It fills the given table with the first half of the current FFT spectrum.<br><br>Returned values: 0 ... 1<br>OR: -1000 db ... 0 db<br><br>The FFT_*-Enum defines the size of the data. The data size is returned.<br><br>The values are returned as decibel base 10 figures if AsDecibel is true.<br><br>Also see:<br>[IGModAudioChannel:FFT()](http://wiki.garrysmod.com/page/IGModAudioChannel/FFT)<br>[BASS_ChannelGetData()](http://www.un4seen.com/doc/#bass/BASS_ChannelGetData.html) |
-| IBASS3Channel:FFTComplex()        | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false`` | ``number Count`` | Similar to BASS3Channel:FFT(), but with different more complete data.<br><br>The given table is filled with complex numbers.<br><br>The real parts are in uneven indexes, while the imaginary parts are in even indexes.<br>So the first index is the real part of the first complex number.<br><br>Returned values: -1 ... 1 |
+| IBASS3Channel:FFTComplex()        | ``table FFT``<br><br>``FFT_*-Enum Size``<br><br>``bool RemoveDCBias = false``<br><br>``bool RemoveHannWindow = false``<br><br>``bool OutputBothSides = false`` | ``number Count`` | Similar to BASS3Channel:FFT(), but with different more complete data.<br><br>The given table is filled with complex numbers.<br><br>The real parts are on uneven indexes, while the imaginary parts are on even indexes.<br>So the first index is the real part of the first complex number.<br>If OutputBothSides is true the output contains bothsides of the FFT spectrum instead of just the first half.<br><br>Returned values: -1 ... 1 |
 | IBASS3Channel:Get3DCone()         | ``nil``                                  | ``float InnerAngle``<br><br>``float OuterAngle``<br><br>``float OuterVolume`` | **Clientside**<br><br>Returns 3D cone of the sound channel. |
 | IBASS3Channel:Get3DEnabled()      | ``nil``                                  | ``bool Enabled3D``       | **Clientside**<br><br>Returns if the channel is played as 3D world sound. |
 | IBASS3Channel:Get3DFadeDistance() | ``nil``                                  | ``float Min``<br><br>``float Max`` | **Clientside**<br><br>Returns 3D fade distances of a sound channel. |
@@ -181,6 +181,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:GetTag()            | ``TAG_*-Enum Type``<br><br>``[table Tags]`` | ``table Tags`` | Returns the channel tags to a table.<br><br>The table is indexed by string or numbers depending on the given type.<br><br>If you pass the optional table, it will change and return this instead of creating a one. Useful for recycling. |
 | IBASS3Channel:GetTime()           | ``nil``                                  | ``float TimePos``        | Returns the current time position in seconds. |
 | IBASS3Channel:GetVolume()         | ``nil``                                  | ``float Volume``         | Returns the current volume. |
+| IBASS3Channel:GetVolumeBoost()    | ``nil``                                  | ``float VolumeBoost``    | Returns the current volume boost. |
 | IBASS3Channel:Is3D()              | ``nil``                                  | ``bool Has3DFlag``       | **Clientside**<br><br>Returns if the channel was created with 3D flag.<br><br>3D related methods need a set 3D flag for taking effects. |
 | IBASS3Channel:IsBlockStreamed()   | ``nil``                                  | ``bool BlockStreamed``   | Returns if the channel is streamed in blocks. |
 | IBASS3Channel:IsEndless()         | ``nil``                                  | ``bool Endless``         | Returns if the channel is endless.<br>Usually online radios are endless. |
@@ -199,6 +200,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:SetPos()            | ``Vector Position = Vector(0,0,0)``<br><br>``Vector Direction = Vector(0,0,0)``<br><br>``Vector Velocity = Vector(0,0,0)`` | ``nil`` | **Clientside**<br><br>Sets the position, direction and velocity of sound channel in case the channel has a 3d option set. |
 | IBASS3Channel:SetTime()           | ``float TimePos``                        | ``nil``                  | Set the time position to the given value.<br><br>It seeks to the position, so the position not set immediately. |
 | IBASS3Channel:SetVolume()         | ``float Volume``                         | ``nil``                  | **Clientside**<br><br>Set the volume to the given value.<br><br>Volume values:<br>0 = Muted<br>1 = Full volume |
+| IBASS3Channel:SetVolumeBoost()    | ``float VolumeBoost``                    | ``nil``                  | **Clientside**<br><br>Set the volume boost to the given value. Setting it to high will cause sound artifacts.<br><br>Volume boost values:<br>0 = +0% Boost (Disabled)<br>1 = +100% Boost<br>1000 = +100000% Boost (Maximum) |
 | IBASS3Channel:Stop()              | ``nil``                                  | ``nil``                  | Stops the channel. |
 | IBASS3Channel:PlayFile()          | ``string Path``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``[function Callback]`` | ``bool Success`` | Same as BASS3.PlayFile(), but with the Callback being optional.<br><br>This changes the channel object instead of creating a new one. Useful for recycling. |
 | IBASS3Channel:PlayURL()           | ``string URL``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``[function Callback]``  | ``bool Success`` | Same as BASS3.PlayURL(), but with the Callback being optional.<br><br>This changes the channel object instead of creating a new one. Useful for recycling. |
