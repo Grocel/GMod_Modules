@@ -15,6 +15,8 @@ private:
 // |                Private Variables                 |
 // +--------------------------------------------------+
 	bass_p pHandle;
+	bass_dsp pVolumeBoostDSP;
+
 	bool bIsOnline;
 	unsigned int iReferences;
 
@@ -26,10 +28,12 @@ private:
 	bass_time iSeekingTo;
 
 	thread* pthSeeker;
-	char* sFilename;
+	string sFilename;
 	mutex MutexLock;
 	mutex MutexLoadingLock;
 
+	float fVolumeBoost;
+	float fVolumeBoostSet;
 
 // +--------------------------------------------------+
 // |                 Private Methods                  |
@@ -49,8 +53,8 @@ private:
 	bool HasFlag(bass_flag eFlag);
 	void SetFlag(bass_flag eF, bool bVar);
 
-	int LoadURL(const char *sURL, bass_flag eFlags);
-	int LoadFile(const char *sURL, bass_flag eFlags);
+	int LoadURL(string sURL, bass_flag eFlags);
+	int LoadFile(string sURL, bass_flag eFlags);
 
 
 public:
@@ -58,26 +62,25 @@ public:
 // |              Constructor/Destructor              |
 // +--------------------------------------------------+
 	TChannel();
-	TChannel(const char *sURL, bool bIsOnline, bass_flag eFlags);
-	TChannel(const char *sURL, bool bIsOnline);
+	TChannel(string sURL, bool bIsOnline, bass_flag eFlags);
+	TChannel(string sURL, bool bIsOnline);
 	~TChannel();
 	
 // +--------------------------------------------------+
 // |                  Public Methods                  |
 // +--------------------------------------------------+
-
 	bass_p GetBassHandle();
 
 	bool IsValid();
 	void Remove();
 	bool Update(DWORD ilength);
 	bool Update();
-	void ToString(char* cBuffer);
+	string ToString();
 	unsigned int AddReference();
 	unsigned int RemoveReference();
 
-	int Load(const char *sURL, bool bIsOnline, bass_flag eFlags);
-	int Load(const char *sURL, bool bIsOnline);
+	int Load(string sURL, bool bIsOnline, bass_flag eFlags);
+	int Load(string sURL, bool bIsOnline);
 
 	void Play(bool bRestart);
 	void Play();
@@ -88,6 +91,8 @@ public:
 
 	void SetVolume(float fVolume);
 	float GetVolume();
+	void SetVolumeBoost(float fVolumeBoost);
+	float GetVolumeBoost();
 	void VolumeFadeTo(float fVolume, DWORD iTime);
 	bool VolumeIsFading();
 
@@ -123,8 +128,8 @@ public:
 	bass_time GetSeekingTo();
 
 	const char* GetTag(bass_flag eMode);
-	const char* GetFileName();
-	const char* GetFileFormat();
+	string GetFileName();
+	string GetFileFormat();
 
 
 	DWORD GetSamplingRate();
@@ -140,22 +145,33 @@ public:
 	bool GetPos(BASS_3DVECTOR* pvPos);
 	bool SetPos(BASS_3DVECTOR* pvPos);
 
-	bool Get3DFadeDistance( float* pfMin, float* pfMax );
-	void Set3DFadeDistance( float fMin, float fMax );
+	bool Get3DFadeDistance(float* pfMin, float* pfMax);
+	void Set3DFadeDistance(float fMin, float fMax);
 
-	bool Get3DFadeDistance( float* pfMin );
-	void Set3DFadeDistance( float fMin );
+	bool Get3DFadeDistance(float* pfMin);
+	void Set3DFadeDistance(float fMin);
 
-	bool Get3DCone( DWORD* piInnerAngle, DWORD* piOuterAngle, float* pfOuterVolume );
-	void Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle, float fOuterVolume );
+	bool Get3DCone(DWORD* piInnerAngle, DWORD* piOuterAngle, float* pfOuterVolume);
+	void Set3DCone(DWORD iInnerAngle, DWORD iOuterAngle, float fOuterVolume);
 
-	bool Get3DCone( DWORD* piInnerAngle, DWORD* piOuterAngle );
-	void Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle );
+	bool Get3DCone(DWORD* piInnerAngle, DWORD* piOuterAngle);
+	void Set3DCone(DWORD iInnerAngle, DWORD iOuterAngle);
 
 	bool Get3DEnabled();
 	void Set3DEnabled(bool bEnabled);
 
 	float GetEAXMix();
 	void SetEAXMix(float fMix);
+	
+	operator string();
+	operator bass_p();
+
+	// +--------------------------------------------------+
+	// |                    Friends                       |
+	// +--------------------------------------------------+
+	friend void CALLBACK fnVolumeBoostDSP(bass_dsp pDSP, bass_p pHandle, void *pBuffer, DWORD iLength, void *pUserData);
+	friend void thfnSeekTo(TChannel* pChannel);
+
+	friend ostream& operator<<(ostream& os, TChannel& Channel);
 };
 #endif

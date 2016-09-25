@@ -44,6 +44,7 @@ int Init(lua_State* state)
 		BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, TRUE);
 		BASS_SetConfig(BASS_CONFIG_VISTA_TRUEPOS, TRUE);
 		BASS_SetConfig(BASS_CONFIG_OGG_PRESCAN, TRUE);
+		BASS_SetConfig(BASS_CONFIG_FLOATDSP, TRUE);
 
 		BASS_SetConfig(BASS_CONFIG_3DALGORITHM, BASS_3DALG_FULL);
 		BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2);
@@ -186,7 +187,15 @@ GMOD_MODULE_OPEN()
 			LUA->ThrowError(err);
 			return 0;
 		}
-		catch(char *s)
+		catch(string s)
+		{
+			snprintf(err, 256, "BASS Init failed, exception error: %s\n", s.c_str());
+
+			err[255] = 0;
+			LUA->ThrowError(err);
+			return 0;
+		}
+		catch(char* s)
 		{
 			snprintf(err, 256, "BASS Init failed, exception error: %s\n", s);
 

@@ -6,7 +6,7 @@
 namespace BASSFILESYS
 {
 	bool Init();
-	bool PlayFile(const char* sFile, bass_flag eFlags, bass_p* ppHandle, int* piErr);
+	bool PlayFile(string& sFile, bass_flag eFlags, bass_p& pHandleOut, int& iErrOut);
 }
 
 #endif

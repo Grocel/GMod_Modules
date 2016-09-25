@@ -162,7 +162,7 @@ namespace UTIL
 			return iFound;
 		}
 
-		bool ToNumber(const char *pString, lua_n &fNumber)
+		bool ToNumber(const char* pString, lua_n &fNumber)
 		{
 			if (ISNULLPTR(pString)) {
 				fNumber = 0;
@@ -174,7 +174,7 @@ namespace UTIL
 				return false;
 			}
 
-			char *end = NULL;
+			char* end = NULL;
 
 			errno = 0;
 			lua_n fOutput = strtod(pString, &end);
@@ -207,11 +207,33 @@ namespace UTIL
 
 			return ToNumber(sInput.c_str(), fNumber);
 		}
-	}
 
-	size_t safe_cpy(char *d, char const *s, size_t n)
-	{
-		return snprintf(d, n, "%s", s);
+		char* safe_getnewcstr(string s)
+		{
+			char* sOut = new char[s.length() + 1];
+			safe_cpy(sOut, s);
+			return sOut;
+		}
+
+		size_t safe_cpy(char* d, string s)
+		{
+			return safe_cpy(d, s.c_str(), s.length() + 1);
+		}
+
+		size_t safe_cpy(char* d, string s, size_t n)
+		{
+			return safe_cpy(d, s.c_str(), n);
+		}
+
+		size_t safe_cpy(char* d, char const *s, size_t n)
+		{
+			d[0] = 0;
+		
+			size_t sizeout = snprintf(d, n, "%s", s);
+			d[n-1] = 0;
+
+			return sizeout;
+		}
 	}
 
 	bool LoadStream(TChannelThreadArgs& ThreadArgs, bool bNotThreaded)
@@ -252,7 +274,7 @@ namespace UTIL
 			}
 			catch(...)
 			{
-				Error("GM_BASS3 couldn't create a 'LoadStream' thread for %s!\n", ThreadArgs.sURL);
+				Error("GM_BASS3 couldn't create a 'LoadStream' thread for %s!\n", ThreadArgs.sURL.c_str());
 				return false;
 			}
 		}
@@ -311,9 +333,9 @@ namespace UTIL
 		}
 	}
 
-	const char* DecodeBassError(int iCode)
+	string DecodeBassError(int iCode)
 	{
-		const char* sError;
+		string sError;
 		switch(iCode)
 		{
 			ENUM_TO_VALUE(BASS_OK,					"OK",														sError);

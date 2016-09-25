@@ -92,6 +92,8 @@ namespace LUAFUNC
 
 			LUA_FUNCTION(SetVolume);
 			LUA_FUNCTION(GetVolume);
+			LUA_FUNCTION(SetVolumeBoost);
+			LUA_FUNCTION(GetVolumeBoost);
 			LUA_FUNCTION(VolumeFadeTo);
 			LUA_FUNCTION(VolumeIsFading);
 

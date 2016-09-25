@@ -171,7 +171,7 @@ namespace LUAFUNC
 			LUA->ReferencePush( iCallbackRef );
 				LUAINTERFACE::PushChannel(state, pChannel);
 				LUA->PushNumber(iError);
-				LUA->PushString(UTIL::DecodeBassError(iError));
+				LUA->PushString(UTIL::DecodeBassError(iError).c_str());
 			LUA->Call(3, 0);
 			LUA->ReferenceFree(iCallbackRef);
 		}
@@ -189,7 +189,7 @@ namespace LUAFUNC
 				if(!LUA->IsType(2, Type::NUMBER) && !LUA->IsType(2, Type::STRING) ) LUA->CheckType(2, Type::NUMBER);
 				LUA->CheckType(3, Type::FUNCTION);
 
-				const char* sURL = LUA->GetString( 1 );
+				string sURL = string(LUA->GetString( 1 ));
 
 				LUA->Push( 3 );
 				int iCallbackRef = LUA->ReferenceCreate();
@@ -220,7 +220,7 @@ namespace LUAFUNC
 				if(!LUA->IsType(2, Type::NUMBER) && !LUA->IsType(2, Type::STRING) ) LUA->CheckType(2, Type::NUMBER);
 				LUA->CheckType(3, Type::FUNCTION);
 
-				const char* sURL = LUA->GetString( 1 );
+				string sURL = string(LUA->GetString( 1 ));
 
 				LUA->Push( 3 );
 				int iCallbackRef = LUA->ReferenceCreate();
@@ -255,7 +255,7 @@ namespace LUAFUNC
 			LUA_FUNCTION(DecodeError)
 			{
 				LUA->CheckType(1, Type::NUMBER);
-				LUA->PushString(UTIL::DecodeBassError((int)LUA->GetNumber(1)));
+				LUA->PushString(UTIL::DecodeBassError((int)LUA->GetNumber(1)).c_str());
 				return 1;
 			}
 
@@ -577,10 +577,7 @@ namespace LUAFUNC
 					return 1;
 				}
 
-				char sToString[1024];
-				pChannel->ToString(sToString);
-				LUA->PushString(sToString);
-
+				LUA->PushString(pChannel->ToString().c_str());
 				return 1;
 			}
 
@@ -622,7 +619,7 @@ namespace LUAFUNC
 					return 1;
 				}
 
-				const char* sURL = LUA->GetString( 2 );
+				string sURL = string(LUA->GetString( 2 ));
 
 				int iCallbackRef = 0;
 				if(!ISNIL(4))
@@ -665,7 +662,7 @@ namespace LUAFUNC
 					return 1;
 				}
 
-				const char* sURL = LUA->GetString( 2 );
+				string sURL = string(LUA->GetString( 2 ));
 
 				int iCallbackRef = 0;
 				if(!ISNIL(4))
@@ -771,6 +768,32 @@ namespace LUAFUNC
 				}
 
 				LUA->PushNumber(pChannel->GetVolume());
+				return 1;
+			}
+
+			LUA_FUNCTION(SetVolumeBoost)
+			{
+				LUA->CheckType(1, TYPE_CHANNEL);
+				LUA->CheckType(2, Type::NUMBER);
+
+				TChannel* pChannel = GETCHANNEL(1);
+				if (ISNULLPTR(pChannel)) return 0;
+
+				pChannel->SetVolumeBoost((float)LUA->GetNumber(2));
+				return 0;
+			}
+
+			LUA_FUNCTION(GetVolumeBoost)
+			{
+				LUA->CheckType(1, TYPE_CHANNEL);
+				TChannel* pChannel = GETCHANNEL(1);
+				if (ISNULLPTR(pChannel))
+				{
+					LUA->PushNumber(0);
+					return 1;
+				}
+
+				LUA->PushNumber(pChannel->GetVolumeBoost());
 				return 1;
 			}
 
@@ -996,6 +1019,8 @@ namespace LUAFUNC
 				int iTableRef = LUA->ReferenceCreate();
 
 				float fTmp;
+				float fVolumeBoost = pChannel->GetVolumeBoost() + 1;
+
 				unsigned int i;
 				unsigned int iIndex = 1;
 
@@ -1034,7 +1059,7 @@ namespace LUAFUNC
 					{
 						for (i = 0; i < iCount; i += iSkip)
 						{
-							fTmp = g_pfFFTBuffer[i];
+							fTmp = g_pfFFTBuffer[i] / fVolumeBoost;
 							fTmp = ((fTmp > 0) ? 20 * log10(fTmp) : BASS_MIN_DECIBELS);
 							if(fTmp < BASS_MIN_DECIBELS) fTmp = BASS_MIN_DECIBELS;
 
@@ -1049,7 +1074,7 @@ namespace LUAFUNC
 					{
 						for (i = 0; i < iCount; i += iSkip)
 						{
-							fTmp = g_pfFFTBuffer[i];
+							fTmp = g_pfFFTBuffer[i] / fVolumeBoost;
 							if(fTmp < 0) fTmp = 0;
 							if(fTmp > 1) fTmp = 1;
 
@@ -1077,6 +1102,7 @@ namespace LUAFUNC
 
 				bool bRemoveDCbias = false;
 				bool bRemoveHannWindow = false;
+				bool bBothSides = false;
 
 				if(!ISNIL(4))
 				{
@@ -1088,6 +1114,12 @@ namespace LUAFUNC
 				{
 					LUA->CheckType(5, Type::BOOL);
 					bRemoveHannWindow = LUA->GetBool(5);
+				}
+
+				if (!ISNIL(6))
+				{
+					LUA->CheckType(6, Type::BOOL);
+					bBothSides = LUA->GetBool(6);
 				}
 
 				TChannel* pChannel = GETCHANNEL(1);
@@ -1110,27 +1142,31 @@ namespace LUAFUNC
 
 				switch (iLuaFlag)
 				{
-					case LUAENUM_FFT_256: iFlag = BASS_DATA_FFT256; iCount = 512; break;
-					case LUAENUM_FFT_512: iFlag = BASS_DATA_FFT512; iCount = 1024; break;
-					case LUAENUM_FFT_1024: iFlag = BASS_DATA_FFT1024; iCount = 2048; break;
-					case LUAENUM_FFT_2048: iFlag = BASS_DATA_FFT2048; iCount = 4096; break;
-					case LUAENUM_FFT_4096: iFlag = BASS_DATA_FFT4096; iCount = 8192; break;
-					case LUAENUM_FFT_8192: iFlag = BASS_DATA_FFT8192; iCount = 16384; break;
-					case LUAENUM_FFT_16384: iFlag = BASS_DATA_FFT16384; iCount = 32768; break;
-					case LUAENUM_FFT_32768: iFlag = BASS_DATA_FFT32768; iCount = 65536; break;
+					case LUAENUM_FFT_256: iFlag = BASS_DATA_FFT256; iCount = 128; break;
+					case LUAENUM_FFT_512: iFlag = BASS_DATA_FFT512; iCount = 256; break;
+					case LUAENUM_FFT_1024: iFlag = BASS_DATA_FFT1024; iCount = 512; break;
+					case LUAENUM_FFT_2048: iFlag = BASS_DATA_FFT2048; iCount = 1024; break;
+					case LUAENUM_FFT_4096: iFlag = BASS_DATA_FFT4096; iCount = 2048; break;
+					case LUAENUM_FFT_8192: iFlag = BASS_DATA_FFT8192; iCount = 4096; break;
+					case LUAENUM_FFT_16384: iFlag = BASS_DATA_FFT16384; iCount = 8192; break;
+					case LUAENUM_FFT_32768: iFlag = BASS_DATA_FFT32768; iCount = 16384; break;
 
-					case LUAENUM_FFT_128: iFlag = BASS_DATA_FFT256; iCount = 512; iSkip = 4; break;
-					case LUAENUM_FFT_64: iFlag = BASS_DATA_FFT256; iCount = 512; iSkip = 8; break;
-					case LUAENUM_FFT_32: iFlag = BASS_DATA_FFT256; iCount = 512; iSkip = 16; break;
-					case LUAENUM_FFT_16: iFlag = BASS_DATA_FFT256; iCount = 512; iSkip = 32; break;
+					case LUAENUM_FFT_128: iFlag = BASS_DATA_FFT256; iCount = 128; iSkip = 2; break;
+					case LUAENUM_FFT_64: iFlag = BASS_DATA_FFT256; iCount = 128; iSkip = 4; break;
+					case LUAENUM_FFT_32: iFlag = BASS_DATA_FFT256; iCount = 128; iSkip = 8; break;
+					case LUAENUM_FFT_16: iFlag = BASS_DATA_FFT256; iCount = 128; iSkip = 16; break;
 
 					default: LUA->PushNumber(0); return 1;
 				}
+
+				iSkip *= 2;
+				iCount *= (bBothSides ? 4 : 2);
 
 				LUA->Push( 2 );
 				int iTableRef = LUA->ReferenceCreate();
 
 				float fTmp;
+				float fVolumeBoost = pChannel->GetVolumeBoost() + 1;
 				unsigned int iIndex = 1;
 				unsigned int i;
 
@@ -1160,7 +1196,7 @@ namespace LUAFUNC
 					for (i = 0; i < iCount; i += iSkip)
 					{
 						// Real Part 
-						fTmp = g_pfFFTBuffer[i];
+						fTmp = g_pfFFTBuffer[i] / fVolumeBoost;
 						if(fTmp < -1) fTmp = -1;
 						if(fTmp > 1) fTmp = 1;
 
@@ -1171,7 +1207,7 @@ namespace LUAFUNC
 						iIndex++;
 
 						// Imaginary Part 
-						fTmp = g_pfFFTBuffer[i+1];
+						fTmp = g_pfFFTBuffer[i + 1] / fVolumeBoost;
 						if(fTmp < -1) fTmp = -1;
 						if(fTmp > 1) fTmp = 1;
 
@@ -1217,6 +1253,7 @@ namespace LUAFUNC
 				}
 
 				float fTmp;
+				float fVolumeBoost = pChannel->GetVolumeBoost() + 1;
 				unsigned int i;
 
 				if(ISNULLPTR(pChannel) || !pChannel->GetLevelEx(g_pfFFTBuffer, fTimeFrame, bRMS))
@@ -1243,7 +1280,7 @@ namespace LUAFUNC
 				{
 					for (i = 0; i < 2; i++)
 					{
-						fTmp = g_pfFFTBuffer[i];
+						fTmp = g_pfFFTBuffer[i] / fVolumeBoost;
 						fTmp = ((fTmp > 0) ? 20 * log10(fTmp) : BASS_MIN_DECIBELS);
 						if(fTmp < BASS_MIN_DECIBELS) fTmp = BASS_MIN_DECIBELS;
 
@@ -1254,7 +1291,7 @@ namespace LUAFUNC
 				{
 					for (i = 0; i < 2; i++)
 					{
-						fTmp = g_pfFFTBuffer[i];
+						fTmp = g_pfFFTBuffer[i] / fVolumeBoost;
 						if(fTmp < 0) fTmp = 0;
 						if(fTmp > 1) fTmp = 1;
 
@@ -1360,7 +1397,7 @@ namespace LUAFUNC
 				iTableRef = LUA->ReferenceCreate();
 				LUA->ReferencePush( iTableRef );
 
-				if(ISNULLPTR(pChannel))
+				if(!ISNULLPTR(pChannel))
 				{
 					switch (iLuaFlag)
 					{
@@ -1423,7 +1460,7 @@ namespace LUAFUNC
 					return 1;
 				}
 
-				LUA->PushString(pChannel->GetFileName());
+				LUA->PushString(pChannel->GetFileName().c_str());
 				return 1;
 			}
 
@@ -1437,7 +1474,7 @@ namespace LUAFUNC
 					return 1;
 				}
 
-				LUA->PushString(pChannel->GetFileFormat());
+				LUA->PushString(pChannel->GetFileFormat().c_str());
 				return 1;
 			}
 

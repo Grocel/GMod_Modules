@@ -1,16 +1,12 @@
-#include <cstring>
-
 // Compiling with Source SDK 2013 for Linux/OSX? Don't forget this:
 #include "tchannel.h"
-
-#include "steam/steamtypes.h"
-#include "tier1/interface.h"
-#include "filesystem.h"
-
 
 #include "../bassfilesys.h"
 #include "../util.h"
 
+// +--------------------------------------------------+
+// |                    Friends                       |
+// +--------------------------------------------------+
 void thfnSeekTo(TChannel* pChannel)
 {
 	if(ISNULLPTR(pChannel)) return;
@@ -24,6 +20,36 @@ void thfnSeekTo(TChannel* pChannel)
 	}
 }
 
+void CALLBACK fnVolumeBoostDSP(bass_dsp pDSP, bass_p pHandle, void *pBuffer, DWORD iLength, void *pUserData)
+{
+	if (ISNULLPTR(pUserData)) return;
+
+	TChannel* pChannal = (TChannel*) pUserData;
+
+	if (ISNULLPTR(pChannal)) return;
+	if (pHandle == BASS_NULL) return;
+	if (ISNULLPTR(pBuffer)) return;
+	if (!iLength) return;
+
+	if (pChannal->pVolumeBoostDSP != BASS_NULL) {
+		if (pDSP != pChannal->pVolumeBoostDSP) return;
+	}
+
+	float fVolumeBoost = pChannal->fVolumeBoost + 1;
+	pChannal->fVolumeBoostSet = pChannal->fVolumeBoost;
+	if (fVolumeBoost <= 1) return;
+
+	float* fdata = (float*) pBuffer;
+	if (ISNULLPTR(fdata)) return;
+
+	while (iLength > 0) {
+		*fdata *= fVolumeBoost;
+
+		iLength -= sizeof(float);
+		fdata += 1;
+	}
+}
+
 
 // +--------------------------------------------------+
 // |                 Private Methods                  |
@@ -32,8 +58,10 @@ void thfnSeekTo(TChannel* pChannel)
 void TChannel::Init()
 {
 	pthSeeker = NULL;
-	sFilename = NULL;
+	sFilename = "";
 	iSeekingTo = 0;
+	fVolumeBoost = 0;
+	fVolumeBoostSet = 0;
 
 	iReferences = 0;
 	AddReference();
@@ -42,6 +70,7 @@ void TChannel::Init()
 	bSeaking = false;
 
 	pHandle = BASS_NULL;
+	pVolumeBoostDSP = BASS_NULL;
 	bIsOnline = false;
 }
 
@@ -66,12 +95,8 @@ void TChannel::RemoveInternal()
 	BASS_ChannelStop(pHandle);
 	BASS_MusicFree(pHandle);
 	BASS_StreamFree(pHandle);
+	sFilename = "";
 
-	if(!ISNULLPTR(sFilename))
-	{
-		delete [] sFilename;
-		sFilename = NULL;
-	}
 	bCanSeek = false;
 
 	pHandle = BASS_NULL;
@@ -138,39 +163,35 @@ void TChannel::SetFlag(bass_flag eFlag, bool bVar)
 	BASS_ChannelFlags(pHandle, bVar ? eFlag : 0, eFlag); // set the flag
 }
 
-int TChannel::LoadURL(const char *sURL, bass_flag eFlags)
+int TChannel::LoadURL(string sURL, bass_flag eFlags)
 {
 	lock_guard<mutex> Lock(MutexLoadingLock);
 
-	if(ISNULLPTR(sURL))
+	if(sURL.empty())
 	{
 		lock_guard<mutex> Lock2(MutexLock);
 		RemoveInternal();
 		return BASS_ERROR_FILEOPEN;
 	}
 
-	int iLen = strlen(sURL) + 1;
-	char* sNewFilename = new char[iLen];
-	UTIL::safe_cpy(sNewFilename, sURL, iLen);
-
-	bass_p pLoadedHandle = NULL;
+	bass_p pLoadedHandle = BASS_NULL;
 	int iErr = 0;
 	bCanSeek = false;
 		
 	try
 	{
-		pLoadedHandle = BASS_StreamCreateURL(sNewFilename, 0, eFlags, NULL, NULL);
+		pLoadedHandle = BASS_StreamCreateURL(sURL.c_str(), 0, eFlags, NULL, NULL);
 		iErr = BASS_ErrorGetCode();
 	}
 	catch(...)
 	{
-		pLoadedHandle = NULL;
+		pLoadedHandle = BASS_NULL;
 		iErr = BASS_ERROR_MEM;
 	}
 
 	lock_guard<mutex> Lock2(MutexLock);
 	RemoveInternal();
-	sFilename = sNewFilename;
+	sFilename = string(sURL);
 
 	if(iErr == BASS_OK)
 	{
@@ -189,23 +210,16 @@ int TChannel::LoadURL(const char *sURL, bass_flag eFlags)
 	return iErr;
 }
 
-int TChannel::LoadFile(const char *sURL, bass_flag eFlags)
+int TChannel::LoadFile(string sURL, bass_flag eFlags)
 {
 	lock_guard<mutex> Lock(MutexLoadingLock);
 
-	if(ISNULLPTR(sURL))
+	if (sURL.empty())
 	{
 		lock_guard<mutex> Lock2(MutexLock);
 		RemoveInternal();
 		return BASS_ERROR_FILEOPEN;
 	}
-
-	int iLen = strlen(sURL) + 1;
-	char* sNewFilename = new char[iLen];
-	UTIL::safe_cpy(sNewFilename, sURL, iLen);
-
-	V_FixSlashes(sNewFilename);
-	V_FixDoubleSlashes(sNewFilename);
 
 	bass_p pLoadedHandle = NULL;
 	int iErr = 0;
@@ -213,7 +227,7 @@ int TChannel::LoadFile(const char *sURL, bass_flag eFlags)
 
 	try
 	{
-		BASSFILESYS::PlayFile(sNewFilename, eFlags, &pLoadedHandle, &iErr);
+		BASSFILESYS::PlayFile(sURL, eFlags, pLoadedHandle, iErr);
 	}
 	catch(...)
 	{
@@ -223,7 +237,7 @@ int TChannel::LoadFile(const char *sURL, bass_flag eFlags)
 
 	lock_guard<mutex> Lock2(MutexLock);
 	RemoveInternal();
-	sFilename = sNewFilename;
+	sFilename = string(sURL);
 
 	if(iErr == BASS_OK)
 	{
@@ -254,13 +268,13 @@ TChannel::TChannel()
 	Init();
 }
 
-TChannel::TChannel(const char *sURL, bool bIsOnline, bass_flag eFlags)
+TChannel::TChannel(string sURL, bool bIsOnline, bass_flag eFlags)
 {
 	Init();
 	Load(sURL, bIsOnline, eFlags);
 }
 
-TChannel::TChannel(const char *sURL, bool bIsOnline)
+TChannel::TChannel(string sURL, bool bIsOnline)
 {
 	Init();
 	Load(sURL, bIsOnline);
@@ -288,12 +302,8 @@ void TChannel::Remove()
 		BASS_ChannelStop(pHandle);
 		BASS_MusicFree(pHandle);
 		BASS_StreamFree(pHandle);
+		sFilename = "";
 
-		if(!ISNULLPTR(sFilename))
-		{
-			delete [] sFilename;
-			sFilename = NULL;
-		}
 		bCanSeek = false;
 
 		pHandle = BASS_NULL;
@@ -328,32 +338,9 @@ bool TChannel::Update()
 	return Update(0);
 }
 
-void TChannel::ToString(char* cBuffer)
+string TChannel::ToString()
 {
-	int iLen = 1024;
-	const char* sIsOnline;
-	const char* sIsLoop;
-	const char* sIs3D;
-
-	lock_guard<mutex> Lock(MutexLock);
-	if(!IsValidInternal())
-	{
-		snprintf( cBuffer, iLen, "[NULL %s]", META_CHANNEL );
-		return;
-	}
-
-	sIsOnline = bIsOnline ? "true" : "false";
-	sIsLoop = HasFlag(BASS_SAMPLE_LOOP) ? "true" : "false";
-
-	if(g_CLIENT)
-	{
-		sIs3D = HasFlag(BASS_SAMPLE_3D) ? "true" : "false";
-		snprintf( cBuffer, iLen, "%s: %p [file:\"%s\"][online:%s][loop:%s][3d:%s]", META_CHANNEL, this, sFilename, sIsOnline, sIsLoop, sIs3D);
-	}
-	else
-	{
-		snprintf( cBuffer, iLen, "%s: %p [file:\"%s\"][online:%s][loop:%s]", META_CHANNEL, this, sFilename, sIsOnline, sIsLoop);
-	}
+	return string(*this);
 }
 
 unsigned int TChannel::AddReference()
@@ -370,7 +357,7 @@ unsigned int TChannel::RemoveReference()
 	return iReferences;
 }
 
-int TChannel::Load(const char *sURL, bool bIsOnline, bass_flag eFlags)
+int TChannel::Load(string sURL, bool bIsOnline, bass_flag eFlags)
 {
 	if(bIsOnline)
 	{
@@ -382,7 +369,7 @@ int TChannel::Load(const char *sURL, bool bIsOnline, bass_flag eFlags)
 	}
 }
 
-int TChannel::Load(const char *sURL, bool bIsOnline)
+int TChannel::Load(string sURL, bool bIsOnline)
 {
 	return Load(sURL, bIsOnline, BASS_NULL);
 }
@@ -447,8 +434,49 @@ float TChannel::GetVolume()
 	if(!IsValidInternal()) return 0;
 
 	BASS_ChannelGetAttribute(pHandle, BASS_ATTRIB_VOL, &fVolume);
+
+	if (fVolume < 0) fVolume = 0; // No negatives
+	if (fVolume > 1) fVolume = 1;
+
 	return fVolume;
 }
+
+void TChannel::SetVolumeBoost(float fVolumeBoost)
+{
+	lock_guard<mutex> Lock(MutexLock);
+	if (!IsValidInternal()) return;
+	if (fVolumeBoost < 0) fVolumeBoost = 0; // No negatives
+	if (fVolumeBoost > 1000) fVolumeBoost = 1000;
+
+	this->fVolumeBoost = fVolumeBoost;
+
+	if (!fVolumeBoost) {
+		if (pVolumeBoostDSP == BASS_NULL) return;
+
+		BASS_ChannelRemoveDSP(pHandle, pVolumeBoostDSP);
+		pVolumeBoostDSP = BASS_NULL;
+		fVolumeBoostSet = 0;
+		return;
+	}
+
+	if (pVolumeBoostDSP != BASS_NULL) return;
+
+	fVolumeBoostSet = 0;
+	pVolumeBoostDSP = BASS_ChannelSetDSP(pHandle, fnVolumeBoostDSP, this, -99999);
+}
+
+float TChannel::GetVolumeBoost()
+{
+	lock_guard<mutex> Lock(MutexLock);
+	if (!IsValidInternal()) return 0;
+
+	if (pVolumeBoostDSP == BASS_NULL) {
+		return this->fVolumeBoost;
+	}
+
+	return fVolumeBoostSet;
+}
+
 
 void TChannel::VolumeFadeTo(float fVolume, DWORD iTime)
 {
@@ -719,32 +747,18 @@ bass_time TChannel::GetSeekingTo()
 	return iSeekingTo;
 }
 
-const char* TChannel::GetFileName()
+string TChannel::GetFileName()
 {
-	const char* filename;
 	BASS_CHANNELINFO info;
 
 	lock_guard<mutex> Lock(MutexLock);
-	if(!IsValidInternal()) return "NULL";
-
-	if(ISNULLPTR(sFilename))
-	{
-		filename = "NULL";
-		return filename;
-	}
-
-	if(!bIsOnline)
-	{
-		filename = sFilename;
-		return filename;
-	}
+	if(!IsValidInternal()) return string("NULL");
+	if(!bIsOnline) return sFilename;
 
 	BASS_ChannelGetInfo(pHandle, &info);
+	if (ISNULLPTR(info.filename)) return string("NULL");
 
-	filename = info.filename;
-	if(ISNULLPTR(filename)) return "NULL";
-
-	return filename;
+	return string(info.filename);
 }
 
 const char* TChannel::GetTag(bass_flag eMode)
@@ -755,49 +769,49 @@ const char* TChannel::GetTag(bass_flag eMode)
 	return BASS_ChannelGetTags(pHandle, eMode);
 }
 
-const char* TChannel::GetFileFormat()
+string TChannel::GetFileFormat()
 {
 	BASS_CHANNELINFO info;
-	const char *Type;
+	string sType;
 
 	lock_guard<mutex> Lock(MutexLock);
-	if(!IsValidInternal()) return "NULL";
+	if(!IsValidInternal()) return string("NULL");
 
 	BASS_ChannelGetInfo(pHandle, &info);
 	switch(info.ctype)
 	{
-		ENUM_TO_VALUE(BASS_CTYPE_SAMPLE,			"SAMPLE",	Type);
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM,			"STREAM",	Type);
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_OGG,		"OGG",		Type);
-		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_FLAC,		"FLAC",		Type);
-		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_FLAC_OGG,	"OGG",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_MP1,		"MP1",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_MP2,		"MP2",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_MP3,		"MP3",		Type);
-		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_MP4,		"MP4",		Type);
-		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_AAC,		"AAC",		Type);
-		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_ALAC,		"ALAC",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_AIFF,		"AIFF",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_CA,			"CA",		Type);
+		ENUM_TO_VALUE(BASS_CTYPE_SAMPLE,			"SAMPLE",	sType);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM,			"STREAM",	sType);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_OGG,		"OGG",		sType);
+		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_FLAC,		"FLAC",		sType);
+		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_FLAC_OGG,	"OGG",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_MP1,		"MP1",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_MP2,		"MP2",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_MP3,		"MP3",		sType);
+		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_MP4,		"MP4",		sType);
+		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_AAC,		"AAC",		sType);
+		//ENUM_TO_VALUE(BASS_CTYPE_STREAM_ALAC,		"ALAC",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_AIFF,		"AIFF",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_CA,			"CA",		sType);
 
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_WAV_PCM,	"WAV",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_WAV_FLOAT,	"WAV",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_WAV,		"WAV",		Type);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_WAV_PCM,	"WAV",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_WAV_FLOAT,	"WAV",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_WAV,		"WAV",		sType);
 			
 		// MOD stuff
-		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_MOD,			"MOD",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_MTM,			"MTM",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_S3M,			"S3M",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_XM,			"XM",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_IT,			"IT",		Type);
-		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_MO3,			"MO3",		Type);
+		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_MOD,			"MOD",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_MTM,			"MTM",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_S3M,			"S3M",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_XM,			"XM",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_IT,			"IT",		sType);
+		ENUM_TO_VALUE(BASS_CTYPE_MUSIC_MO3,			"MO3",		sType);
 
-		ENUM_TO_VALUE(BASS_CTYPE_STREAM_MF,			"MF",		Type);
+		ENUM_TO_VALUE(BASS_CTYPE_STREAM_MF,			"MF",		sType);
 
-		default: Type = "UNKNOWN";
+		default: sType = "UNKNOWN";
 	}
 
-	return Type;
+	return sType;
 }
 
 DWORD TChannel::GetSamplingRate()
@@ -874,7 +888,7 @@ bool TChannel::SetPos(BASS_3DVECTOR* pvPos)
 	return SetPos(pvPos, NULL, NULL);
 }
 
-bool TChannel::Get3DFadeDistance( float* pfMin, float* pfMax )
+bool TChannel::Get3DFadeDistance(float* pfMin, float* pfMax)
 {
 	lock_guard<mutex> Lock(MutexLock);
 
@@ -882,7 +896,7 @@ bool TChannel::Get3DFadeDistance( float* pfMin, float* pfMax )
 	return BASS_ChannelGet3DAttributes(pHandle, NULL, pfMin, pfMax, NULL, NULL, NULL) == TRUE;
 }
 
-void TChannel::Set3DFadeDistance( float fMin, float fMax ) 
+void TChannel::Set3DFadeDistance(float fMin, float fMax)
 {
 	lock_guard<mutex> Lock(MutexLock);
 
@@ -891,17 +905,17 @@ void TChannel::Set3DFadeDistance( float fMin, float fMax )
 	BASS_Apply3D();
 }
 
-bool TChannel::Get3DFadeDistance( float* pfMin )
+bool TChannel::Get3DFadeDistance(float* pfMin)
 {
 	return Get3DFadeDistance( pfMin, NULL );
 }
 
-void TChannel::Set3DFadeDistance( float fMin ) 
+void TChannel::Set3DFadeDistance(float fMin)
 {
 	Set3DFadeDistance( fMin, BASS_NO_CHANGE );
 }
 
-bool TChannel::Get3DCone( DWORD* piInnerAngle, DWORD* piOuterAngle, float* pfOuterVolume )
+bool TChannel::Get3DCone(DWORD* piInnerAngle, DWORD* piOuterAngle, float* pfOuterVolume)
 {
 	lock_guard<mutex> Lock(MutexLock);
 
@@ -909,7 +923,7 @@ bool TChannel::Get3DCone( DWORD* piInnerAngle, DWORD* piOuterAngle, float* pfOut
 	return BASS_ChannelGet3DAttributes(pHandle, NULL, NULL, NULL, piInnerAngle, piOuterAngle, pfOuterVolume) == TRUE;
 }
 
-void TChannel::Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle, float fOuterVolume ) 
+void TChannel::Set3DCone(DWORD iInnerAngle, DWORD iOuterAngle, float fOuterVolume)
 {
 	lock_guard<mutex> Lock(MutexLock);
 
@@ -918,12 +932,12 @@ void TChannel::Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle, float fOuterVolu
 	BASS_Apply3D();
 }
 
-bool TChannel::Get3DCone( DWORD* piInnerAngle, DWORD* piOuterAngle )
+bool TChannel::Get3DCone(DWORD* piInnerAngle, DWORD* piOuterAngle)
 {
 	return Get3DCone( piInnerAngle, piOuterAngle, NULL );
 }
 
-void TChannel::Set3DCone( DWORD iInnerAngle, DWORD iOuterAngle ) 
+void TChannel::Set3DCone(DWORD iInnerAngle, DWORD iOuterAngle)
 {
 	Set3DCone( iInnerAngle, iOuterAngle, BASS_NO_CHANGE );
 }
@@ -973,4 +987,39 @@ void TChannel::SetEAXMix(float fMix)
 	if (fMix > 1) fMix = 1;
 
 	BASS_ChannelSetAttribute(pHandle, BASS_ATTRIB_EAXMIX, fMix);
+}
+
+TChannel::operator string()
+{
+	stringstream out;
+
+	out << (*this);
+
+	return string(out.str());
+}
+
+TChannel::operator bass_p()
+{
+	return GetBassHandle();
+}
+
+ostream& operator<<(ostream& os, TChannel& Channel)
+{
+	if (!Channel.IsValid())
+	{
+		os << "[NULL " << META_CHANNEL << "]";
+		return os;
+	}
+
+	os << META_CHANNEL << ": " << &Channel << " ";
+	os << "[file:\"" << Channel.GetFileName() << "\"]";
+	os << "[online:" << (Channel.IsOnline() ? "true" : "false") << "]";
+	os << "[loop:" << (Channel.HasFlag(BASS_SAMPLE_LOOP) ? "true" : "false") << "]";
+
+	if (g_CLIENT)
+	{
+		os << "[3d:" << (Channel.HasFlag(BASS_SAMPLE_3D) ? "true" : "false") << "]";
+	}
+
+	return os;
 }

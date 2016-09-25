@@ -195,7 +195,12 @@ namespace BASSFILESYS
 			Warning("BASS Filesystem error, exception error: %s\n", e.what());
 			return false;
 		}
-		catch(char *s)
+		catch(string s)
+		{
+			Warning("BASS Filesystem error, exception error: %s\n", s.c_str());
+			return false;
+		}
+		catch(char* s)
 		{
 			Warning("BASS Filesystem error, exception error: %s\n", s);
 			return false;
@@ -207,22 +212,26 @@ namespace BASSFILESYS
 		}
 	}
 
-	bool PlayFile(const char* sFile, bass_flag eFlags, bass_p* ppHandle, int* piErr)
+	bool PlayFile(string& sFile, bass_flag eFlags, bass_p& pHandleOut, int& iErrOut)
 	{
-		*ppHandle = BASS_NULL;
-		*piErr = BASS_ERROR_FILEOPEN;
+		pHandleOut = BASS_NULL;
+		iErrOut = BASS_ERROR_FILESYSTEM;
 
-		if(ISNULLPTR(sFile)) return false;
-		if(ISNULLPTR(ppHandle)) return false;
-		if(ISNULLPTR(piErr)) return false;
-
-		*piErr = BASS_ERROR_FILESYSTEM;
 		if(ISNULLPTR(g_pFileSystem)) return false;
+
 		bass_p pHandle = BASS_NULL;
 		int iErr = -1;
 		FileHandle_t fh = NULL;
-	
-		fh = g_pFileSystem->Open(sFile, "rb", "GAME");
+
+		char* sFileTemp = UTIL::STRING::safe_getnewcstr(sFile);
+
+		V_FixSlashes(sFileTemp);
+		V_FixDoubleSlashes(sFileTemp);
+
+		sFile = string(sFileTemp);
+		delete[] sFileTemp;
+
+		fh = g_pFileSystem->Open(sFile.c_str(), "rb", "GAME");
 		if(!ISNULLPTR(fh))
 		{
 			pHandle = BASS_StreamCreateFileUser(STREAMFILE_NOBUFFER, eFlags, &StreamDataTable, fh);
@@ -230,18 +239,18 @@ namespace BASSFILESYS
 
 			if(iErr == BASS_ERROR_FILEFORM)
 			{
-				fh = g_pFileSystem->Open(sFile, "rb", "GAME");
+				fh = g_pFileSystem->Open(sFile.c_str(), "rb", "GAME");
 				if(!ISNULLPTR(fh))
 				{
-					int iLength = (int)g_pFileSystem->Size(fh);
+					unsigned int iLength = g_pFileSystem->Size(fh);
 
-					char *pData = new char[iLength];
+					char* pData = new char[iLength];
 					int iLengthRead = g_pFileSystem->Read(pData, iLength, fh);
+					g_pFileSystem->Close(fh);
 
 					pHandle = BASS_MusicLoad(true, pData, 0, iLengthRead, eFlags, 0);
 					iErr = BASS_ErrorGetCode();
 
-					g_pFileSystem->Close(fh);
 					delete [] pData;
 				}
 				else
@@ -255,22 +264,14 @@ namespace BASSFILESYS
 			iErr = BASS_ERROR_FILEOPEN;
 		}
 
-		*ppHandle = pHandle;
-		*piErr = iErr;
-
-		if(iErr != BASS_OK)
-		{
-			return false;
-		}
-
 		if(pHandle == BASS_NULL)
 		{
 			iErr = BASS_ERROR_UNKNOWN;
-			*piErr = iErr;
-
-			return false;
 		}
 
-		return true;
+		pHandleOut = pHandle;
+		iErrOut = iErr;
+
+		return iErr == BASS_OK;
 	}
 }

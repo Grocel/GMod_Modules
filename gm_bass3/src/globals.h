@@ -5,6 +5,9 @@
 #include <cstdlib>
 #include <exception>
 #include <stdexcept>
+#include <cstring>
+#include <iomanip>
+#include <sstream>
 #include <math.h>
 
 // Compiling with Source SDK 2013 for Linux/OSX? Don't forget this:
@@ -22,7 +25,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#define GM_BASS_VERSION 9
+#define GM_BASS_VERSION 10
 
 #define ENUM_TO_VALUE(ENUM, VALUE, VAR) case ENUM: VAR = VALUE; break
 
@@ -45,6 +48,7 @@
 
 typedef double lua_n;
 typedef DWORD bass_p;
+typedef HDSP  bass_dsp;
 typedef DWORD bass_flag;
 typedef QWORD bass_time;
 
@@ -62,7 +66,7 @@ struct TChannelCallbackData
 struct TChannelThreadArgs
 {
 	TChannel* pChannel;
-	const char* sURL;
+	string sURL;
 	bool bIsOnline;
 	bass_flag eFlags;
 	int iCallbackRef;

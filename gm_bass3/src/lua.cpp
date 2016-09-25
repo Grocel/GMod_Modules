@@ -283,6 +283,8 @@ namespace LUAINTERFACE
 			{
 				ADDMETHOD(IBASS3Channel, SetVolume);
 				ADDMETHOD(IBASS3Channel, GetVolume);
+				ADDMETHOD(IBASS3Channel, SetVolumeBoost);
+				ADDMETHOD(IBASS3Channel, GetVolumeBoost);
 				ADDMETHOD(IBASS3Channel, VolumeFadeTo);
 				ADDMETHOD(IBASS3Channel, VolumeIsFading);
 
