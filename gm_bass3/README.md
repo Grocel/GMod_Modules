@@ -85,7 +85,7 @@ Also never pass the numbers directly, as they could be changed too.
 
 
 ##### FFT_\*
-| Name                 | Value | FFT levels  | FFTComplex levels | FFTComplex levels with OutputBothSides = true |
+| Name                 | Value | IBASS3Channel:FFT() levels | IBASS3Channel:FFTComplex() levels | IBASS3Channel:FFTComplex() levels with OutputBothSides = true |
 | -------------------- | ----- | ----------- | ----------------- | ---------- |
 | BASS3.ENUM.FFT_16    | 10    | 8           | 16                | 32         |
 | BASS3.ENUM.FFT_32    | 11    | 16          | 32                | 64         |
@@ -180,8 +180,8 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:GetState()          | ``nil``                                  | ``CHANNEL_*-Enum State`` | Returns the channel state.<br><br>See the CHANNEL_* table. |
 | IBASS3Channel:GetTag()            | ``TAG_*-Enum Type``<br><br>``[table Tags]`` | ``table Tags`` | Returns the channel tags to a table.<br><br>The table is indexed by string or numbers depending on the given type.<br><br>If you pass the optional table, it will change and return this instead of creating a one. Useful for recycling. |
 | IBASS3Channel:GetTime()           | ``nil``                                  | ``float TimePos``        | Returns the current time position in seconds. |
-| IBASS3Channel:GetVolume()         | ``nil``                                  | ``float Volume``         | Returns the current volume. |
-| IBASS3Channel:GetVolumeBoost()    | ``nil``                                  | ``float VolumeBoost``    | Returns the current volume boost. |
+| IBASS3Channel:GetVolume()         | ``nil``                                  | ``float Volume``         | **Clientside**<br><br>Returns the current volume. |
+| IBASS3Channel:GetVolumeBoost()    | ``nil``                                  | ``float VolumeBoost``    | **Clientside**<br><br>Returns the current volume boost. |
 | IBASS3Channel:Is3D()              | ``nil``                                  | ``bool Has3DFlag``       | **Clientside**<br><br>Returns if the channel was created with 3D flag.<br><br>3D related methods need a set 3D flag for taking effects. |
 | IBASS3Channel:IsBlockStreamed()   | ``nil``                                  | ``bool BlockStreamed``   | Returns if the channel is streamed in blocks. |
 | IBASS3Channel:IsEndless()         | ``nil``                                  | ``bool Endless``         | Returns if the channel is endless.<br>Usually online radios are endless. |
