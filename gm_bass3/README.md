@@ -89,8 +89,8 @@ Also never pass the numbers directly, as they could be changed too.
 | -------------------- | ----- | ----------- | ----------------- | ---------- |
 | BASS3.ENUM.FFT_16    | 10    | 8           | 16                | 32         |
 | BASS3.ENUM.FFT_32    | 11    | 16          | 32                | 64         |
-| BASS3.ENUM.FFT_128   | 13    | 64          | 128               | 256        |
 | BASS3.ENUM.FFT_64    | 12    | 32          | 64                | 128        |
+| BASS3.ENUM.FFT_128   | 13    | 64          | 128               | 256        |
 | BASS3.ENUM.FFT_256   | 0     | 128         | 256               | 512        |
 | BASS3.ENUM.FFT_512   | 1     | 256         | 512               | 1024       |
 | BASS3.ENUM.FFT_1024  | 2     | 512         | 1024              | 2048       |
