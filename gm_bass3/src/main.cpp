@@ -6,7 +6,7 @@ using namespace GarrysMod::Lua;
 // Called when you module is opened
 //
 
-int Init(lua_State* state)
+int Init(ILuaBase* pLUA)
 {
 	g_pListPendingCallbacks = new SyncList<TChannelCallbackData *>;
 	g_pListRunningThreads = new SyncList<thread *>;
@@ -19,16 +19,15 @@ int Init(lua_State* state)
 	catch(...)
 	{
 		g_thCleanUp = NULL;
-		LUA->ThrowError("BASS Init failed, error creating cleanup thread.");
+		pLUA->ThrowError("BASS Init failed, error creating cleanup thread.");
 		return 0;
 	}
 
 	BASS_Stop();
 	BASSFILESYS::Init();
 
-	LUAINTERFACE::SetupGlobalTable(state);
-	LUAINTERFACE::SetupBASSTable(state);
-	LUAINTERFACE::SetupChannelObject(state);
+	LUAINTERFACE::SetupBASSTable(pLUA);
+	LUAINTERFACE::SetupChannelObject(pLUA);
 	BASS_Start();
 
 	try
@@ -80,7 +79,7 @@ int Init(lua_State* state)
 		BASS_Stop();
 		BASS_Start();
 
-		LUA->ThrowError("BASS Init failed, exception error: Unknown");
+		pLUA->ThrowError("BASS Init failed, exception error: Unknown");
 		return 0;
 	}
 
@@ -105,11 +104,11 @@ GMOD_MODULE_OPEN()
 		return 0;
 	}
 
-	LUAINTERFACE::SetupRealm(state);
+	LUAINTERFACE::SetupRealm(LUA);
 
 	if(g_CLIENT)
 	{
-		return Init(state);
+		return Init(LUA);
 	}
 	else // Only for the server
 	{
@@ -123,7 +122,7 @@ GMOD_MODULE_OPEN()
 			if(!BASS_Init(-1, 44100, BASS_NULL, NULL, NULL)) // Try to load Bass.
 			{
 				int error = BASS_ErrorGetCode();
-				if (error == BASS_ERROR_ALREADY) return Init(state); // Bass is already loaded, so use that.
+				if (error == BASS_ERROR_ALREADY) return Init(LUA); // Bass is already loaded, so use that.
 
 				if (error == BASS_ERROR_DX)
 				{
@@ -223,7 +222,7 @@ GMOD_MODULE_OPEN()
 		return 0;
 	}
 
-	return Init(state);
+	return Init(LUA);
 }
 
 //
@@ -240,8 +239,7 @@ GMOD_MODULE_CLOSE()
 		g_thCleanUp = NULL;
 	}
 
-	UTIL::ClearPendingChannels(state);
-	LUAINTERFACE::UnrefGlobalReferences(state);
+	UTIL::ClearPendingChannels(LUA);
 
 	if(!ISNULLPTR(g_pListRunningThreads))
 	{

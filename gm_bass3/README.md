@@ -11,7 +11,7 @@ You put the DLL files for your OS in to the garrysmod/lua/bin/ folder.
 
 ## Compiling
 At the first I run the premake script so the project files are generated.
-For windows I compile the code with Visual Studio 2013. For Linux I use 'gcc/g++'' and 'make' on a Linux Mint VirtualBox.
+For windows I compile the code with Visual Studio 2013. For Linux I use 'gcc/g++' and 'make' on a Linux Mint VirtualBox.
 If you want to compile it yourself you could get some trouble on Linux, because I had to install like a ton of libraries and stuff I don't even remember to make the compiler work properly.
 You need the Source SDK 2013 to compile too.
 
@@ -145,7 +145,7 @@ Also never pass the numbers directly, as they could be changed too.
 ##### Variables
 | Name                | Value   | Description |
 | ------------------- | ------- | ----------- |
-| BASS3.ModuleVersion | 10      | Version of gm_bass3. |
+| BASS3.ModuleVersion | 11      | Version of gm_bass3. |
 | BASS3.Version       | 2041200 | Version of the BASS sound engine. |
 
 

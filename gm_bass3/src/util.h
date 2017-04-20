@@ -9,6 +9,8 @@
 void thfnLoadStream(TChannelThreadArgs ThreadArgs);
 void thfnCleanUp();
 
+using namespace GarrysMod::Lua;
+
 namespace UTIL
 {
 	namespace STRING
@@ -32,7 +34,7 @@ namespace UTIL
 	unsigned int VersionToDecimal(DWORD iVer);
 	unsigned int GetBASSVersionDecimal();
 	void ClearLoadingThreads();
-	void ClearPendingChannels(lua_State* state);
+	void ClearPendingChannels(ILuaBase* pLUA);
 	string DecodeBassError(int iCode);
 }
 

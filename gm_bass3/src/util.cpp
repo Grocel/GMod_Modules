@@ -314,7 +314,7 @@ namespace UTIL
 		}
 	}
 
-	void ClearPendingChannels(lua_State* state)
+	void ClearPendingChannels(ILuaBase* pLUA)
 	{
 		if(ISNULLPTR(g_pListPendingCallbacks)) return;
 
@@ -329,7 +329,7 @@ namespace UTIL
 			delete pCallbackData;
 
 			LUAINTERFACE::DeleteChannel(pChannel);
-			LUA->ReferenceFree(iCallbackRef);
+			pLUA->ReferenceFree(iCallbackRef);
 		}
 	}
 

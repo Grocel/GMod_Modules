@@ -5,8 +5,9 @@
 #define LUA_FUNCTIONS_H
 
 using namespace GarrysMod::Lua;
-#define LUA_FUNCTION(fn) int fn(lua_State* state)
 
+#define LUA_FUNCTION_HEADER(FUNC) int FUNC( lua_State* L )
+ 
 // Channel states
 #define LUAENUM_CHANNEL_STOPPED 0
 #define LUAENUM_CHANNEL_PLAYING 1
@@ -49,24 +50,24 @@ using namespace GarrysMod::Lua;
 
 namespace LUAFUNC
 {
-	LUA_FUNCTION(PullPendingChannels);
+	LUA_FUNCTION_HEADER(PullPendingChannels);
 
 	namespace _G
 	{
 		namespace BASS3
 		{
-			LUA_FUNCTION(PlayFile);
-			LUA_FUNCTION(PlayURL);
-			LUA_FUNCTION(CreateChannel);
-			LUA_FUNCTION(DecodeError);
+			LUA_FUNCTION_HEADER(PlayFile);
+			LUA_FUNCTION_HEADER(PlayURL);
+			LUA_FUNCTION_HEADER(CreateChannel);
+			LUA_FUNCTION_HEADER(DecodeError);
 
-			LUA_FUNCTION(SetAgent);
-			LUA_FUNCTION(GetAgent);
-			LUA_FUNCTION(SetProxy);
-			LUA_FUNCTION(GetProxy);
+			LUA_FUNCTION_HEADER(SetAgent);
+			LUA_FUNCTION_HEADER(GetAgent);
+			LUA_FUNCTION_HEADER(SetProxy);
+			LUA_FUNCTION_HEADER(GetProxy);
 
-			LUA_FUNCTION(GetEAX);
-			LUA_FUNCTION(SetEAX);
+			LUA_FUNCTION_HEADER(GetEAX);
+			LUA_FUNCTION_HEADER(SetEAX);
 		}
 	}
 
@@ -74,74 +75,74 @@ namespace LUAFUNC
 	{
 		namespace IBASS3Channel
 		{
-			LUA_FUNCTION(lua__gc);
-			LUA_FUNCTION(lua__eq);
-			LUA_FUNCTION(lua__tostring);
+			LUA_FUNCTION_HEADER(lua__gc);
+			LUA_FUNCTION_HEADER(lua__eq);
+			LUA_FUNCTION_HEADER(lua__tostring);
 
-			LUA_FUNCTION(Remove);
-			LUA_FUNCTION(IsValid);
+			LUA_FUNCTION_HEADER(Remove);
+			LUA_FUNCTION_HEADER(IsValid);
 
-			LUA_FUNCTION(PlayFile);
-			LUA_FUNCTION(PlayURL);
+			LUA_FUNCTION_HEADER(PlayFile);
+			LUA_FUNCTION_HEADER(PlayURL);
 
-			LUA_FUNCTION(Play);
-			LUA_FUNCTION(Stop);
-			LUA_FUNCTION(Pause);
+			LUA_FUNCTION_HEADER(Play);
+			LUA_FUNCTION_HEADER(Stop);
+			LUA_FUNCTION_HEADER(Pause);
 
-			LUA_FUNCTION(GetState);
+			LUA_FUNCTION_HEADER(GetState);
 
-			LUA_FUNCTION(SetVolume);
-			LUA_FUNCTION(GetVolume);
-			LUA_FUNCTION(SetVolumeBoost);
-			LUA_FUNCTION(GetVolumeBoost);
-			LUA_FUNCTION(VolumeFadeTo);
-			LUA_FUNCTION(VolumeIsFading);
+			LUA_FUNCTION_HEADER(SetVolume);
+			LUA_FUNCTION_HEADER(GetVolume);
+			LUA_FUNCTION_HEADER(SetVolumeBoost);
+			LUA_FUNCTION_HEADER(GetVolumeBoost);
+			LUA_FUNCTION_HEADER(VolumeFadeTo);
+			LUA_FUNCTION_HEADER(VolumeIsFading);
 
-			LUA_FUNCTION(SetBalance);
-			LUA_FUNCTION(GetBalance);
-			LUA_FUNCTION(BalanceFadeTo);
-			LUA_FUNCTION(BalanceIsFading);
+			LUA_FUNCTION_HEADER(SetBalance);
+			LUA_FUNCTION_HEADER(GetBalance);
+			LUA_FUNCTION_HEADER(BalanceFadeTo);
+			LUA_FUNCTION_HEADER(BalanceIsFading);
 
-			LUA_FUNCTION(Is3D);
-			LUA_FUNCTION(IsLooping);
-			LUA_FUNCTION(IsOnline);
-			LUA_FUNCTION(IsBlockStreamed);
+			LUA_FUNCTION_HEADER(Is3D);
+			LUA_FUNCTION_HEADER(IsLooping);
+			LUA_FUNCTION_HEADER(IsOnline);
+			LUA_FUNCTION_HEADER(IsBlockStreamed);
 
-			LUA_FUNCTION(EnableLooping);
-			LUA_FUNCTION(FFT);
-			LUA_FUNCTION(FFTComplex);
-			LUA_FUNCTION(GetLevel);
+			LUA_FUNCTION_HEADER(EnableLooping);
+			LUA_FUNCTION_HEADER(FFT);
+			LUA_FUNCTION_HEADER(FFTComplex);
+			LUA_FUNCTION_HEADER(GetLevel);
 
-			LUA_FUNCTION(GetTime);
-			LUA_FUNCTION(SetTime);
+			LUA_FUNCTION_HEADER(GetTime);
+			LUA_FUNCTION_HEADER(SetTime);
 
-			LUA_FUNCTION(GetLength);
-			LUA_FUNCTION(IsEndless);
+			LUA_FUNCTION_HEADER(GetLength);
+			LUA_FUNCTION_HEADER(IsEndless);
 
-			LUA_FUNCTION(IsSeeking);
+			LUA_FUNCTION_HEADER(IsSeeking);
 
-			LUA_FUNCTION(GetTag);
-			LUA_FUNCTION(GetFileName);
-			LUA_FUNCTION(GetFileFormat);
+			LUA_FUNCTION_HEADER(GetTag);
+			LUA_FUNCTION_HEADER(GetFileName);
+			LUA_FUNCTION_HEADER(GetFileFormat);
 
-			LUA_FUNCTION(GetSamplingRate);
-			LUA_FUNCTION(GetBitsPerSample);
-			LUA_FUNCTION(GetAverageBitRate);
+			LUA_FUNCTION_HEADER(GetSamplingRate);
+			LUA_FUNCTION_HEADER(GetBitsPerSample);
+			LUA_FUNCTION_HEADER(GetAverageBitRate);
 
-			LUA_FUNCTION(GetPos);
-			LUA_FUNCTION(SetPos);
+			LUA_FUNCTION_HEADER(GetPos);
+			LUA_FUNCTION_HEADER(SetPos);
 
-			LUA_FUNCTION(Get3DFadeDistance);
-			LUA_FUNCTION(Set3DFadeDistance);
+			LUA_FUNCTION_HEADER(Get3DFadeDistance);
+			LUA_FUNCTION_HEADER(Set3DFadeDistance);
 
-			LUA_FUNCTION(Get3DCone);
-			LUA_FUNCTION(Set3DCone);
+			LUA_FUNCTION_HEADER(Get3DCone);
+			LUA_FUNCTION_HEADER(Set3DCone);
 
-			LUA_FUNCTION(Get3DEnabled);
-			LUA_FUNCTION(Set3DEnabled);
+			LUA_FUNCTION_HEADER(Get3DEnabled);
+			LUA_FUNCTION_HEADER(Set3DEnabled);
 
-			LUA_FUNCTION(GetEAXmix);
-			LUA_FUNCTION(SetEAXmix);
+			LUA_FUNCTION_HEADER(GetEAXmix);
+			LUA_FUNCTION_HEADER(SetEAXmix);
 		}
 	}
 }

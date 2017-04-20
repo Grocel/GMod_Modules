@@ -8,16 +8,16 @@
 #include "classes/tchannel.h"
 
 bool ReadMetaTag(string& sLine, unsigned int iCount, void *pUserData);
-bool GenericParseList(const char* pTagData, string& sSeperator, lua_State* state);
-bool GenericParseList(const char* pTagData, const char* pSeperator, lua_State* state);
-bool GenericParseList(const char* pTagData, char cSeperator, lua_State* state);
+bool GenericParseList(const char* pTagData, string& sSeperator, ILuaBase* pLUA);
+bool GenericParseList(const char* pTagData, const char* pSeperator, ILuaBase* pLUA);
+bool GenericParseList(const char* pTagData, char cSeperator, ILuaBase* pLUA);
 
 bool ReadMetaTag(string& sLine, unsigned int iCount, void *pUserData)
 {
 	if(ISNULLPTR(pUserData)) return false;
 
-	lua_State* state = (lua_State*)(pUserData);
-	if(ISNULLPTR(state)) return false;
+	ILuaBase* pLUA = (ILuaBase*)(pUserData);
+	if(ISNULLPTR(pLUA)) return false;
 
 	string sKey = "";
 	string sValue = "";
@@ -46,26 +46,26 @@ bool ReadMetaTag(string& sLine, unsigned int iCount, void *pUserData)
 	lua_n fValue = 0;
 	bool bIsNumber = UTIL::STRING::ToNumber(sValue, fValue);
 
-	LUA->PushString( sKey.c_str() );
+	pLUA->PushString( sKey.c_str() );
 	if(bIsNumber) {
-		LUA->PushNumber( fValue );
+		pLUA->PushNumber( fValue );
 	} else {
-		LUA->PushString( sValue.c_str() );
+		pLUA->PushString( sValue.c_str() );
 	}
-	LUA->SetTable( -3 );
+	pLUA->SetTable( -3 );
 
 	return true;
 }
 
-bool GenericParseList(const char* pTagData, char cSeperator, lua_State* state)
+bool GenericParseList(const char* pTagData, char cSeperator, ILuaBase* pLUA)
 {
 	string sSeperator = "";
 	if(cSeperator) sSeperator += cSeperator;
 
-	return GenericParseList(pTagData, sSeperator, state);
+	return GenericParseList(pTagData, sSeperator, pLUA);
 }
 
-bool GenericParseList(const char* pTagData, const char* pSeperator, lua_State* state)
+bool GenericParseList(const char* pTagData, const char* pSeperator, ILuaBase* pLUA)
 {
 	string sSeperator = "";
 	
@@ -74,13 +74,13 @@ bool GenericParseList(const char* pTagData, const char* pSeperator, lua_State* s
 		sSeperator = string(pSeperator);
 	}
 
-	return GenericParseList(pTagData, sSeperator, state);
+	return GenericParseList(pTagData, sSeperator, pLUA);
 }
 
-bool GenericParseList(const char* pTagData, string& sSeperator, lua_State* state)
+bool GenericParseList(const char* pTagData, string& sSeperator, ILuaBase* pLUA)
 {
 	if(ISNULLPTR(pTagData)) return false;
-	if(ISNULLPTR(state)) return false;
+	if(ISNULLPTR(pLUA)) return false;
 
 	unsigned int i = 0;
 	bool bEmpty = true;
@@ -122,13 +122,13 @@ bool GenericParseList(const char* pTagData, string& sSeperator, lua_State* state
 				continue;
 			}
 
-			LUA->PushString( sKey.c_str() );
+			pLUA->PushString( sKey.c_str() );
 			if(bIsNumber) {
-				LUA->PushNumber( fValue );
+				pLUA->PushNumber( fValue );
 			} else {
-				LUA->PushString( sValue.c_str() );
+				pLUA->PushString( sValue.c_str() );
 			}
-			LUA->SetTable( -3 );
+			pLUA->SetTable( -3 );
 			bEmpty = false;
 		}
 		else
@@ -142,13 +142,13 @@ bool GenericParseList(const char* pTagData, string& sSeperator, lua_State* state
 			i++;
 			bIsNumber = UTIL::STRING::ToNumber(sData, fValue);
 
-			LUA->PushNumber( i );
+			pLUA->PushNumber( i );
 			if(bIsNumber) {
-				LUA->PushNumber( fValue );
+				pLUA->PushNumber( fValue );
 			} else {
-				LUA->PushString( sData.c_str() );
+				pLUA->PushString( sData.c_str() );
 			}
-			LUA->SetTable( -3 );
+			pLUA->SetTable( -3 );
 			bEmpty = false;
 		}
 
@@ -160,21 +160,21 @@ bool GenericParseList(const char* pTagData, string& sSeperator, lua_State* state
 
 namespace TAG
 {
-	bool META(const char* pTagData, lua_State* state)
+	bool META(const char* pTagData, ILuaBase* pLUA)
 	{
 		if(ISNULLPTR(pTagData)) return false;
-		if(ISNULLPTR(state)) return false;
+		if(ISNULLPTR(pLUA)) return false;
 
 		string sSeperator = ";";
 		string sData = string(pTagData);
 
-		return UTIL::STRING::ForEachSegment(sData, sSeperator, &ReadMetaTag, state) > 0;
+		return UTIL::STRING::ForEachSegment(sData, sSeperator, &ReadMetaTag, pLUA) > 0;
 	}
 
-	bool ID3(const char* pTagData, lua_State* state)
+	bool ID3(const char* pTagData, ILuaBase* pLUA)
 	{
 		if(ISNULLPTR(pTagData)) return false;
-		if(ISNULLPTR(state)) return false;
+		if(ISNULLPTR(pLUA)) return false;
 
 		const TAG_ID3* pTagID3 = (const TAG_ID3*)pTagData;
 		if(ISNULLPTR(pTagID3)) return false;
@@ -200,90 +200,90 @@ namespace TAG
 		{
 			bIsNumber = UTIL::STRING::ToNumber(sID, fValue);
 
-			LUA->PushString( "id" );
+			pLUA->PushString( "id" );
 			if(bIsNumber) {
-				LUA->PushNumber( fValue );
+				pLUA->PushNumber( fValue );
 			} else {
-				LUA->PushString( sID.c_str() );
+				pLUA->PushString( sID.c_str() );
 			}
-			LUA->SetTable( -3 );
+			pLUA->SetTable( -3 );
 		}
 
 		if(sYear != "")
 		{
 			bIsNumber = UTIL::STRING::ToNumber(sYear, fValue);
 
-			LUA->PushString( "year" );
+			pLUA->PushString( "year" );
 			if(bIsNumber) {
-				LUA->PushNumber( fValue );
+				pLUA->PushNumber( fValue );
 			} else {
-				LUA->PushString( sYear.c_str()  );
+				pLUA->PushString( sYear.c_str()  );
 			}
-			LUA->SetTable( -3 );
+			pLUA->SetTable( -3 );
 		}
 
-		LUA->PushString( "genre" ); 
-		LUA->PushNumber( pTagID3->genre );
-		LUA->SetTable( -3 );
+		pLUA->PushString( "genre" ); 
+		pLUA->PushNumber( pTagID3->genre );
+		pLUA->SetTable( -3 );
 
 		if(sTitle != "")
 		{
-			LUA->PushString( "title" ); 
-			LUA->PushString( sTitle.c_str() );
-			LUA->SetTable( -3 );
+			pLUA->PushString( "title" ); 
+			pLUA->PushString( sTitle.c_str() );
+			pLUA->SetTable( -3 );
 		}
 
 		if(sArtist != "")
 		{
-			LUA->PushString( "artist" ); 
-			LUA->PushString( sArtist.c_str() );
-			LUA->SetTable( -3 );
+			pLUA->PushString( "artist" ); 
+			pLUA->PushString( sArtist.c_str() );
+			pLUA->SetTable( -3 );
 		}
 
 		if(sAlbum != "")
 		{
-			LUA->PushString( "album" ); 
-			LUA->PushString( sAlbum.c_str() );
-			LUA->SetTable( -3 );
+			pLUA->PushString( "album" ); 
+			pLUA->PushString( sAlbum.c_str() );
+			pLUA->SetTable( -3 );
 		}
 
 		if(sComment != "")
 		{
-			LUA->PushString( "comment" ); 
-			LUA->PushString( sComment.c_str() );
-			LUA->SetTable( -3 );
+			pLUA->PushString( "comment" ); 
+			pLUA->PushString( sComment.c_str() );
+			pLUA->SetTable( -3 );
 		}
 
 		return true;
 	}
 
-	bool HTTP(const char* pTagData, lua_State* state)
+	bool HTTP(const char* pTagData, ILuaBase* pLUA)
 	{
-		return GenericParseList(pTagData, ':', state);
+		return GenericParseList(pTagData, ':', pLUA);
 	}
 
-	bool ICY(const char* pTagData, lua_State* state)
+	bool ICY(const char* pTagData, ILuaBase* pLUA)
 	{
-		return GenericParseList(pTagData, "", state);
+		return GenericParseList(pTagData, "", pLUA);
 	}
 
-	bool MF(const char* pTagData, lua_State* state)
+	bool MF(const char* pTagData, ILuaBase* pLUA)
 	{
-		return GenericParseList(pTagData, '=', state);
+		return GenericParseList(pTagData, '=', pLUA);
 	}
 
-	bool MP4(const char* pTagData, lua_State* state)
+	bool MP4(const char* pTagData, ILuaBase* pLUA)
 	{
-		return GenericParseList(pTagData, '=', state);
+		return GenericParseList(pTagData, '=', pLUA);
 	}
 
-	bool APE(const char* pTagData, lua_State* state)
+	bool APE(const char* pTagData, ILuaBase* pLUA)
 	{
-		return GenericParseList(pTagData, '=', state);
+		return GenericParseList(pTagData, '=', pLUA);
 	}
 
-	bool OGG(const char* pTagData, lua_State* state)
+	bool OGG(const char* pTagData, ILuaBase* pLUA)
 	{
-		return GenericParseList(pTagData, '=', state);
+		return GenericParseList(pTagData, '=', pLUA);
 	}
 }

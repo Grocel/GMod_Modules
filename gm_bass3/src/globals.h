@@ -17,6 +17,8 @@
 #include "list.h"
 #include "bass/bass.h"
 
+#define GMOD_USE_SOURCESDK
+
 #ifdef _WIN32
 #else
 	#include <unistd.h>
@@ -25,7 +27,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#define GM_BASS_VERSION 10
+#define GM_BASS_VERSION 11
 
 #define ENUM_TO_VALUE(ENUM, VALUE, VAR) case ENUM: VAR = VALUE; break
 
@@ -35,7 +37,6 @@
 #define BASS_MIN_DECIBELS -1000
 
 #define META_CHANNEL "IBASS3Channel"
-#define TYPE_CHANNEL 66
 
 #define BASS_ERROR_FILESYSTEM 102
 
@@ -78,8 +79,7 @@ extern bool g_IsDedicatedServer;
 extern bool g_SELFLOADED;
 extern bool g_CLOSING;
 extern bool g_IntialTickHappend;
-extern int g_ChannelRef;
-extern int g_VectorFuncRef;
+extern int g_ChannelTypeID;
 
 extern thread* g_thCleanUp;
 extern SyncList<TChannelCallbackData *>* g_pListPendingCallbacks;

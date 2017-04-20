@@ -2,33 +2,26 @@
 #include "lua_functions.h"
 #include "util.h"
 
-#define ADDFUNC(name, func ) LUA->PushCFunction( func ); LUA->SetField( -2, name )
+#define ADDFUNC(name, func ) pLUA->PushCFunction( func ); pLUA->SetField( -2, name )
 #define ADDMETHOD(obj, name ) ADDFUNC( #name, LUAFUNC::_R::obj::name )
 #define ADDTABFUNC(tab, name ) ADDFUNC( #name, LUAFUNC::_G::tab::name )
-#define ADDENUM(name) LUA->PushNumber( LUAENUM_ ## name ); LUA->SetField( -2, #name )
-#define ADDBASSENUM(name) LUA->PushNumber( BASS_ ## name ); LUA->SetField( -2, #name )
-
-#define CREATEVECTOR(x, y, z) LUA->ReferencePush(g_VectorFuncRef); LUA->PushNumber(x); LUA->PushNumber(y); LUA->PushNumber(z); LUA->Call(3, 1); LUA->Push(-1);
+#define ADDENUM(name) pLUA->PushNumber( LUAENUM_ ## name ); pLUA->SetField( -2, #name )
+#define ADDBASSENUM(name) pLUA->PushNumber( BASS_ ## name ); pLUA->SetField( -2, #name )
 
 using namespace GarrysMod::Lua;
 using namespace LUAFUNC;
 
 namespace LUAINTERFACE
 {
-	void PushChannel(lua_State* state, TChannel* pChannel)
+	void PushChannel(ILuaBase* pLUA, TChannel* pChannel)
 	{
 		if(ISNULLPTR(pChannel))
 		{
-			LUA->PushNil();
+			pLUA->PushNil();
 			return;
 		}
 
-		GarrysMod::Lua::UserData* ud = (GarrysMod::Lua::UserData*)LUA->NewUserdata(sizeof(GarrysMod::Lua::UserData));
-		ud->data = pChannel;
-		ud->type = TYPE_CHANNEL;
-
-		LUA->ReferencePush(g_ChannelRef);
-		LUA->SetMetaTable(-2);
+		pLUA->PushUserType(pChannel, g_ChannelTypeID);
 	}
 
 	void DeleteChannel(TChannel *pChannel)
@@ -39,33 +32,28 @@ namespace LUAINTERFACE
 		if(!iRefs) delete pChannel;
 	}
 
-	// Todo: Get Source SDK to compile for Linux, so we can use real Vectors...
-	void PushVector(lua_State* state, BASS_3DVECTOR* pBassVector)
+	void PushVector(ILuaBase* pLUA, BASS_3DVECTOR* pBassVector)
 	{
-		if(ISNULLPTR(pBassVector))
+		if (ISNULLPTR(pBassVector))
 		{
-			LUA->PushNil();
+			pLUA->PushNil();
 			return;
 		}
 
-		int iRef = 0;
-
-		CREATEVECTOR(pBassVector->x, -pBassVector->y, pBassVector->z);
-		LUA->Push(-1);
-		iRef = LUA->ReferenceCreate();
-		LUA->Pop(2);
-
-		LUA->ReferencePush(iRef);
-		LUA->ReferenceFree(iRef);
+		Vector vPos;
+		vPos.x = pBassVector->x;
+		vPos.y = pBassVector->y;
+		vPos.z = pBassVector->z;
+		pLUA->PushVector(vPos);
 	}
 
-	void SetupRealm(lua_State* state)
+	void SetupRealm(ILuaBase* pLUA)
 	{
 		// Is it a client?
-		LUA->PushSpecial(GarrysMod::Lua::SPECIAL_GLOB);
-			LUA->GetField(-1, "CLIENT");
-			g_CLIENT = LUA->GetBool(-1);
-		LUA->Pop();
+		pLUA->PushSpecial(GarrysMod::Lua::SPECIAL_GLOB);
+			pLUA->GetField(-1, "CLIENT");
+			g_CLIENT = pLUA->GetBool(-1);
+		pLUA->Pop();
 
 		if(g_CLIENT)
 		{
@@ -73,30 +61,22 @@ namespace LUAINTERFACE
 		}
 		else
 		{
-			LUA->PushSpecial(GarrysMod::Lua::SPECIAL_GLOB);
-				LUA->GetField(-1, "game");
-					LUA->GetField(-1, "IsDedicated");
-					LUA->Call(0, 1);
-					g_IsDedicatedServer = LUA->GetBool( -1 );
-			LUA->Pop(2);
+			pLUA->PushSpecial(GarrysMod::Lua::SPECIAL_GLOB);
+				pLUA->GetField(-1, "game");
+					pLUA->GetField(-1, "IsDedicated");
+					pLUA->Call(0, 1);
+					g_IsDedicatedServer = pLUA->GetBool( -1 );
+			pLUA->Pop(2);
 		}
 	}
 
-	void SetupGlobalTable(lua_State* state)
-	{
-		LUA->PushSpecial(SPECIAL_GLOB);
-			LUA->GetField(-1, "Vector");
-			g_VectorFuncRef = LUA->ReferenceCreate();
-		LUA->Pop();
-	}
-
-	void SetupBASSTable(lua_State* state)
+	void SetupBASSTable(ILuaBase* pLUA)
 	{
 		int iTabBassRef = 0;
 		int iTabBassEnumRef = 0;
 
 		// _G.BASS.ENUM
-		LUA->CreateTable();
+		pLUA->CreateTable();
 			// Channel stats
 			ADDENUM(CHANNEL_STOPPED);
 			ADDENUM(CHANNEL_PLAYING);
@@ -104,8 +84,8 @@ namespace LUAINTERFACE
 			ADDENUM(CHANNEL_STALLED);
 
 			// Errors
-			LUA->PushNumber( BASS_OK );
-			LUA->SetField( -2, "ERROR_OK" );
+			pLUA->PushNumber( BASS_OK );
+			pLUA->SetField( -2, "ERROR_OK" );
 			ADDBASSENUM(ERROR_UNKNOWN);
 
 			ADDBASSENUM(ERROR_MEM);
@@ -179,21 +159,21 @@ namespace LUAINTERFACE
 			ADDENUM(TAG_MP4);
 			ADDENUM(TAG_APE);
 			ADDENUM(TAG_OGG);
-		iTabBassEnumRef = LUA->ReferenceCreate();
+		iTabBassEnumRef = pLUA->ReferenceCreate();
 
 		// _G.BASS
-		LUA->CreateTable();
+		pLUA->CreateTable();
 			// Version of BASS
-			LUA->PushNumber(UTIL::GetBASSVersionDecimal()); 
-			LUA->SetField(-2, "Version");
+			pLUA->PushNumber(UTIL::GetBASSVersionDecimal()); 
+			pLUA->SetField(-2, "Version");
 
 			// Version of gm_bass3
-			LUA->PushNumber(GM_BASS_VERSION); 
-			LUA->SetField(-2, "ModuleVersion");
+			pLUA->PushNumber(GM_BASS_VERSION); 
+			pLUA->SetField(-2, "ModuleVersion");
 
 			// Enums
-			LUA->ReferencePush(iTabBassEnumRef);
-			LUA->SetField(-2, "ENUM");
+			pLUA->ReferencePush(iTabBassEnumRef);
+			pLUA->SetField(-2, "ENUM");
 
 			// Functions
 			ADDTABFUNC(BASS3, PlayFile);
@@ -211,37 +191,37 @@ namespace LUAINTERFACE
 				ADDTABFUNC(BASS3, GetEAX);
 				ADDTABFUNC(BASS3, SetEAX);
 			}
-		iTabBassRef = LUA->ReferenceCreate();
+		iTabBassRef = pLUA->ReferenceCreate();
 
 		// Add BASS3 to _G
-		LUA->PushSpecial( SPECIAL_GLOB );
-			//LUA->ReferencePush(iTabBassRef);
-			//LUA->SetField(-2, "BASS3");
+		pLUA->PushSpecial(SPECIAL_GLOB);
+			//pLUA->ReferencePush(iTabBassRef);
+			//pLUA->SetField(-2, "BASS3");
 
-			LUA->PushString( "BASS3" );
-			LUA->ReferencePush(iTabBassRef);
-		LUA->SetTable( -3 );
+			pLUA->PushString("BASS3");
+			pLUA->ReferencePush(iTabBassRef);
+		pLUA->SetTable(-3);
 
 		// Add pulling hook
-		LUA->PushSpecial(GarrysMod::Lua::SPECIAL_GLOB);
-			LUA->GetField(-1, "hook");
-				LUA->GetField(-1, "Add");
-				LUA->PushString("Tick");
-				LUA->PushString("BASS3_PULL");
-				LUA->PushCFunction(PullPendingChannels);
-			LUA->Call(3, 0);
-		LUA->Pop(2);
+		pLUA->PushSpecial(GarrysMod::Lua::SPECIAL_GLOB);
+			pLUA->GetField(-1, "hook");
+				pLUA->GetField(-1, "Add");
+				pLUA->PushString("Tick");
+				pLUA->PushString("BASS3_PULL");
+				pLUA->PushCFunction(PullPendingChannels);
+			pLUA->Call(3, 0);
+		pLUA->Pop(2);
 
-		LUA->ReferenceFree(iTabBassRef);
-		LUA->ReferenceFree(iTabBassEnumRef);
+		pLUA->ReferenceFree(iTabBassRef);
+		pLUA->ReferenceFree(iTabBassEnumRef);
 	}
 
-	void SetupChannelObject(lua_State* state)
+	void SetupChannelObject(ILuaBase* pLUA)
 	{
 		int iTabChannelRef = 0;
 
 		// _R.IBASS3Channel
-		LUA->CreateTable();
+		pLUA->CreateTable();
 			ADDMETHOD(IBASS3Channel, Remove);
 			ADDMETHOD(IBASS3Channel, IsValid);
 
@@ -310,25 +290,19 @@ namespace LUAINTERFACE
 				ADDMETHOD(IBASS3Channel, GetEAXmix);
 				ADDMETHOD(IBASS3Channel, SetEAXmix);
 			}
-		iTabChannelRef = LUA->ReferenceCreate();
+		iTabChannelRef = pLUA->ReferenceCreate();
 
 		// Add IBASS3Channel to _R
-		LUA->CreateMetaTableType(META_CHANNEL, TYPE_CHANNEL);
-			LUA->ReferencePush(iTabChannelRef); 
-			LUA->SetField(-2, "__index");
-			LUA->ReferencePush(iTabChannelRef);
-			LUA->SetField(-2, "__newindex");
+		g_ChannelTypeID = pLUA->CreateMetaTable(META_CHANNEL);
+			pLUA->ReferencePush(iTabChannelRef);
+			pLUA->SetField(-2, "__index");
+			pLUA->ReferencePush(iTabChannelRef);
+			pLUA->SetField(-2, "__newindex");
 			ADDFUNC("__gc", LUAFUNC::_R::IBASS3Channel::lua__gc);
 			ADDFUNC("__eq", LUAFUNC::_R::IBASS3Channel::lua__eq);
 			ADDFUNC("__tostring", LUAFUNC::_R::IBASS3Channel::lua__tostring);
-			g_ChannelRef = LUA->ReferenceCreate();
-		LUA->Pop();
-		LUA->ReferenceFree(iTabChannelRef);
-	}
-
-	void UnrefGlobalReferences(lua_State* state)
-	{
-		LUA->ReferenceFree(g_ChannelRef);
-		LUA->ReferenceFree(g_VectorFuncRef);
+			//g_ChannelRef = pLUA->ReferenceCreate();
+		pLUA->Pop();
+		pLUA->ReferenceFree(iTabChannelRef);
 	}
 }
