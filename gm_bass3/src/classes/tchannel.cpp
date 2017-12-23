@@ -483,7 +483,7 @@ void TChannel::VolumeFadeTo(float fVolume, DWORD iTime)
 	lock_guard<mutex> Lock(MutexLock);
 	if(!IsValidInternal()) return;
 	if (fVolume < 0) fVolume = 0; // No negatives
-	if (fVolume > 1) fVolume = 1;
+	if (fVolume > 1) fVolume = 1000;
 
 	BASS_ChannelSlideAttribute(pHandle, BASS_ATTRIB_VOL, fVolume, iTime);
 }

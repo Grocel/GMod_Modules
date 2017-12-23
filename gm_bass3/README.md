@@ -204,7 +204,7 @@ Since all channels are muted on the server, all 3D sound, volume and balance rel
 | IBASS3Channel:Stop()              | ``nil``                                  | ``nil``                  | Stops the channel. |
 | IBASS3Channel:PlayFile()          | ``string Path``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``[function Callback]`` | ``bool Success`` | Same as BASS3.PlayFile(), but with the Callback being optional.<br><br>This changes the channel object instead of creating a new one. Useful for recycling. |
 | IBASS3Channel:PlayURL()           | ``string URL``<br><br>``{string or MODE_*-Enum} Flags``<br><br>``[function Callback]``  | ``bool Success`` | Same as BASS3.PlayURL(), but with the Callback being optional.<br><br>This changes the channel object instead of creating a new one. Useful for recycling. |
-| IBASS3Channel:VolumeFadeTo()      | ``float Volume``<br><br>``number time``  | ``nil``                  | **Clientside**<br><br>Fade the sound volume to the given value for the given time in secounds. |
+| IBASS3Channel:VolumeFadeTo()      | ``float Volume``<br><br>``number time``  | ``nil``                  | **Clientside**<br><br>Fade the sound volume to the given value for the given time in seconds. |
 | IBASS3Channel:VolumeIsFading()    | ``nil``                                  | ``bool Fading``          | **Clientside**<br>Returns true if the sound volume is fading. |
 
 
