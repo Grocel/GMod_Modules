@@ -421,7 +421,7 @@ void TChannel::SetVolume(float fVolume)
 	lock_guard<mutex> Lock(MutexLock);
 	if(!IsValidInternal()) return;
 	if (fVolume < 0) fVolume = 0; // No negatives
-	if (fVolume > 1) fVolume = 1;
+	if (fVolume > 1000) fVolume = 1000;
 
 	BASS_ChannelSlideAttribute(pHandle, BASS_ATTRIB_VOL, fVolume, 0);
 }
@@ -436,7 +436,7 @@ float TChannel::GetVolume()
 	BASS_ChannelGetAttribute(pHandle, BASS_ATTRIB_VOL, &fVolume);
 
 	if (fVolume < 0) fVolume = 0; // No negatives
-	if (fVolume > 1) fVolume = 1;
+	if (fVolume > 1000) fVolume = 1000;
 
 	return fVolume;
 }

@@ -94,4 +94,5 @@ set compiling=X
 
 :END
 	set compiling=""
+	pause > nul
 	@exit /B 0
