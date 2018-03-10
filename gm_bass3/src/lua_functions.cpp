@@ -775,6 +775,7 @@ namespace LUAFUNC
 			{
 				LUA->CheckType(1, g_ChannelTypeID);
 				LUA->CheckType(2, Type::NUMBER);
+				Warning("IBASS3Channel:SetVolumeBoost() is deprecated and will be removed by May 2018. Use IBASS3Channel:SetVolume(volume > 1) instead!\n");
 
 				TChannel* pChannel = LUA->GetUserType<TChannel>(1, g_ChannelTypeID);
 				if (ISNULLPTR(pChannel)) return 0;
@@ -786,6 +787,8 @@ namespace LUAFUNC
 			LUA_FUNCTION(GetVolumeBoost)
 			{
 				LUA->CheckType(1, g_ChannelTypeID);
+				Warning("IBASS3Channel:GetVolumeBoost() is deprecated and will be removed along with IBASS3Channel:SetVolumeBoost() by May 2018. Use IBASS3Channel:GetVolume() instead!\n");
+
 				TChannel* pChannel = LUA->GetUserType<TChannel>(1, g_ChannelTypeID);
 				if (ISNULLPTR(pChannel))
 				{
