@@ -1,8 +1,10 @@
-#include "globals.h"
-#include "GarrysMod/Lua/Interface.h"
+#include "globals.hpp"
+#include "lua/lua.hpp"
 
 #ifndef TAG_H
 #define TAG_H
+
+
 
 using namespace GarrysMod::Lua;
 

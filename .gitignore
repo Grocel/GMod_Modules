@@ -20,6 +20,7 @@ local.properties
 working
 *.make
 makefile
+createsymlinks.bat
 
 */bin/win32/*.lib
 

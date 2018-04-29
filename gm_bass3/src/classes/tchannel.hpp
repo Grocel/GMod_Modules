@@ -1,13 +1,17 @@
 #include <thread>
 #include <mutex>
+#include <list>
 
 #include "bass/bass.h"
-#include "../globals.h"
+#include "tluarefable.hpp"
+#include "teffect.hpp"
 
 #ifndef T_CHANNEL_H
 #define T_CHANNEL_H
 
-class TChannel
+
+
+class TChannel : public TLuaRefAble
 {
 
 private:
@@ -15,25 +19,21 @@ private:
 // |                Private Variables                 |
 // +--------------------------------------------------+
 	bass_p pHandle;
-	bass_dsp pVolumeBoostDSP;
 
 	bool bIsOnline;
-	unsigned int iReferences;
-
 	bool bCanSeek;
 	bool bSeaking;
-
-	bool bIsLocked;
 
 	bass_time iSeekingTo;
 
 	thread* pthSeeker;
 	string sFilename;
-	mutex MutexLock;
 	mutex MutexLoadingLock;
 
+	list<TEffect*> lsFX;
+
 	float fVolumeBoost;
-	float fVolumeBoostSet;
+	float fVolume;
 
 // +--------------------------------------------------+
 // |                 Private Methods                  |
@@ -42,6 +42,10 @@ private:
 	bool IsValidInternal();
 	bool Is3DInternal();
 	void RemoveInternal();
+
+	void ClearFxInternal();
+	void ApplyFxInternal();
+	void UpdateFxInternal();
 
 	void Reset3D();
 
@@ -58,6 +62,10 @@ private:
 
 
 public:
+	static string LUAMETANAME;
+	static int LUAMETAID;
+	static map<unsigned long long, TChannel*> g_mapObjectInstances;
+
 // +--------------------------------------------------+
 // |              Constructor/Destructor              |
 // +--------------------------------------------------+
@@ -75,9 +83,7 @@ public:
 	void Remove();
 	bool Update(DWORD ilength);
 	bool Update();
-	string ToString();
-	unsigned int AddReference();
-	unsigned int RemoveReference();
+	void Think();
 
 	int Load(string sURL, bool bIsOnline, bass_flag eFlags);
 	int Load(string sURL, bool bIsOnline);
@@ -163,13 +169,18 @@ public:
 	float GetEAXMix();
 	void SetEAXMix(float fMix);
 	
+	bool AddFx(TEffect* pFX);
+	void ClearFx();
+
+	string ToString();
 	operator string();
+
 	operator bass_p();
+	bool operator ==(TChannel& other);
 
 	// +--------------------------------------------------+
 	// |                    Friends                       |
 	// +--------------------------------------------------+
-	friend void CALLBACK fnVolumeBoostDSP(bass_dsp pDSP, bass_p pHandle, void *pBuffer, DWORD iLength, void *pUserData);
 	friend void thfnSeekTo(TChannel* pChannel);
 
 	friend ostream& operator<<(ostream& os, TChannel& Channel);

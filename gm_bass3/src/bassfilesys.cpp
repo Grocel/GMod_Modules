@@ -3,8 +3,8 @@
 // Compiling with Source SDK 2013 for Linux/OSX? Don't forget this:
 #include "steam/steamtypes.h"
 
-#include "bassfilesys.h"
-#include "util.h"
+#include "bassfilesys.hpp"
+#include "util.hpp"
 
 #include "tier2/tier2.h"
 #include "tier1/interface.h"

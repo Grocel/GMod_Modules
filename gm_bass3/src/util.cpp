@@ -7,9 +7,9 @@
 #include <thread>
 #include <mutex>
 
-#include "util.h"
-#include "classes/tchannel.h"
-#include "lua.h"
+#include "util.hpp"
+#include "classes/tchannel.hpp"
+#include "lua/lua.hpp"
 
 void thfnLoadStream(TChannelThreadArgs ThreadArgs)
 {
@@ -35,7 +35,7 @@ void thfnLoadStream(TChannelThreadArgs ThreadArgs)
 
 	if(!bIsRecycledChannel && iError != BASS_OK)
 	{
-		LUAINTERFACE::DeleteChannel(pChannel);
+		LUAINTERFACE::HELPER::Delete<TChannel>(pChannel);
 		pChannel = NULL;
 	}
 
@@ -162,7 +162,7 @@ namespace UTIL
 			return iFound;
 		}
 
-		bool ToNumber(const char* pString, lua_n &fNumber)
+		bool ToNumber(const char* pString, double &fNumber)
 		{
 			if (ISNULLPTR(pString)) {
 				fNumber = 0;
@@ -177,7 +177,7 @@ namespace UTIL
 			char* end = NULL;
 
 			errno = 0;
-			lua_n fOutput = strtod(pString, &end);
+			double fOutput = strtod(pString, &end);
 
 			if ((errno == ERANGE && fOutput == DBL_MAX) || fOutput > DBL_MAX) {
 				fNumber = 0;
@@ -198,7 +198,7 @@ namespace UTIL
 			return true;
 		}
 
-		bool ToNumber(string &sInput, lua_n &fNumber)
+		bool ToNumber(string &sInput, double &fNumber)
 		{
 			if (sInput == "") {
 				fNumber = 0;
@@ -311,25 +311,6 @@ namespace UTIL
 
 			thLoadStream->join();
 			delete thLoadStream;
-		}
-	}
-
-	void ClearPendingChannels(ILuaBase* pLUA)
-	{
-		if(ISNULLPTR(g_pListPendingCallbacks)) return;
-
-		while(g_pListPendingCallbacks->getSize() > 0)
-		{
-			TChannelCallbackData* pCallbackData = g_pListPendingCallbacks->remove();
-			if(ISNULLPTR(pCallbackData)) continue;
-
-			TChannel* pChannel = pCallbackData->pChannel;
-			int iError = pCallbackData->iError;
-			int iCallbackRef = pCallbackData->iCallbackRef;
-			delete pCallbackData;
-
-			LUAINTERFACE::DeleteChannel(pChannel);
-			pLUA->ReferenceFree(iCallbackRef);
 		}
 	}
 

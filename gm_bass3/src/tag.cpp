@@ -2,10 +2,10 @@
 #include <string>
 #include <algorithm>
 
-#include "tag.h"
-#include "lua.h"
-#include "util.h"
-#include "classes/tchannel.h"
+#include "tag.hpp"
+#include "lua/lua.hpp"
+#include "util.hpp"
+#include "classes/tchannel.hpp"
 
 bool ReadMetaTag(string& sLine, unsigned int iCount, void *pUserData);
 bool GenericParseList(const char* pTagData, string& sSeperator, ILuaBase* pLUA);
@@ -43,7 +43,7 @@ bool ReadMetaTag(string& sLine, unsigned int iCount, void *pUserData)
 	if(sKey == "") return false;
 	if(sValue == "") return false;
 
-	lua_n fValue = 0;
+	double fValue = 0;
 	bool bIsNumber = UTIL::STRING::ToNumber(sValue, fValue);
 
 	pLUA->PushString( sKey.c_str() );
@@ -89,7 +89,7 @@ bool GenericParseList(const char* pTagData, string& sSeperator, ILuaBase* pLUA)
 	string sValue = "";
 	string sData = "";
 
-	lua_n fValue = 0;
+	double fValue = 0;
 	bool bIsNumber = false;
 
 	// Getting a list of null-terminated strings
@@ -179,7 +179,7 @@ namespace TAG
 		const TAG_ID3* pTagID3 = (const TAG_ID3*)pTagData;
 		if(ISNULLPTR(pTagID3)) return false;
 
-		lua_n fValue = 0;
+		double fValue = 0;
 		bool bIsNumber = false;
 
 		string sID = string(pTagID3->id, 3);

@@ -1,7 +1,9 @@
-#include "globals.h"
+#include "globals.hpp"
 
 #ifndef BASSFILESYS_H
 #define BASSFILESYS_H
+
+
 
 namespace BASSFILESYS
 {

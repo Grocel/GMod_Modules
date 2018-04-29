@@ -1,4 +1,4 @@
-#include "main.h"
+#include "main.hpp"
 
 using namespace GarrysMod::Lua;
 
@@ -16,7 +16,7 @@ int Init(ILuaBase* pLUA)
 	{
 		g_thCleanUp = new thread(thfnCleanUp);
 	}
-	catch(...)
+	catch (...)
 	{
 		g_thCleanUp = NULL;
 		pLUA->ThrowError("BASS Init failed, error creating cleanup thread.");
@@ -26,8 +26,7 @@ int Init(ILuaBase* pLUA)
 	BASS_Stop();
 	BASSFILESYS::Init();
 
-	LUAINTERFACE::SetupBASSTable(pLUA);
-	LUAINTERFACE::SetupChannelObject(pLUA);
+	LUAINTERFACE::Init(pLUA);
 	BASS_Start();
 
 	try
@@ -79,7 +78,7 @@ int Init(ILuaBase* pLUA)
 		BASS_Stop();
 		BASS_Start();
 
-		pLUA->ThrowError("BASS Init failed, exception error: Unknown");
+		pLUA->ThrowError("BASS Init failed, exception: Unknown");
 		return 0;
 	}
 
@@ -91,15 +90,15 @@ GMOD_MODULE_OPEN()
 	g_CLOSING = false;
 	g_IntialTickHappend = false;
 	g_SELFLOADED = false;
+	g_pcErrorBuffer = new char[ERROR_PUFFER_SIZE];
 
 	unsigned int iVer = HIWORD(BASS_GetVersion());
 	if(iVer < BASSVERSION)
 	{
 		unsigned int iHeaderVer = UTIL::VersionToDecimal(BASSVERSION << 16);
-		char err[128];
 
-		snprintf(err, 128, "BASS Init failed, outdated BASS Version (%x expected, got %i).\n", iHeaderVer, UTIL::GetBASSVersionDecimal());
-		LUA->ThrowError(err);
+		snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, outdated BASS Version (%x expected, got %i).\n", iHeaderVer, UTIL::GetBASSVersionDecimal());
+		LUA->ThrowError(g_pcErrorBuffer);
 
 		return 0;
 	}
@@ -112,10 +111,6 @@ GMOD_MODULE_OPEN()
 	}
 	else // Only for the server
 	{
-		char err[256];
-		err[0] = 0;
-		err[255] = 0;
-
 		try
 		{
 			BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT, true);
@@ -126,85 +121,72 @@ GMOD_MODULE_OPEN()
 
 				if (error == BASS_ERROR_DX)
 				{
-					snprintf(err, 256, "BASS Init failed, error code %d.\nDirectX or ALSA is not available.\nMake sure you installed ASIO on Linux or DirectX on Windows.", error);
-
-					err[255] = 0;
-					LUA->ThrowError(err);
+					snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, error code %d.\nDirectX or ALSA is not available.\nMake sure you installed ASIO on Linux or DirectX 9+ on Windows.", error);
+					LUA->ThrowError(g_pcErrorBuffer);
 
 					return 0;
 				}
 
 				if (error == BASS_ERROR_DRIVER)
 				{
-					snprintf(err, 256, "BASS Init failed, error code %d.\nSound driver is not available.\nIf you are on Linux, make sure you installed ASIO.\nOn Linux the user running this application needs 'xrw' access to the sound interface too.", error);
-
-					err[255] = 0;
-					LUA->ThrowError(err);
+					snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, error code %d.\nSound driver is not available.\nIf you are on Linux, make sure you installed ASIO.\nOn Linux the user running this application needs 'xrw' access to the sound interface aswell.", error);
+					LUA->ThrowError(g_pcErrorBuffer);
 
 					return 0;
 				}
 
 				if (error == BASS_ERROR_DEVICE)
 				{
-					snprintf(err, 256, "BASS Init failed, error code %d.\nSound driver is not available or the device was not found.\nIf you are on Linux, make sure you installed ASIO.", error);
-
-					err[255] = 0;
-					LUA->ThrowError(err);
+					snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, error code %d.\nSound driver is not available or the device was not found.\nIf you are on Linux, make sure you installed ASIO.", error);
+					LUA->ThrowError(g_pcErrorBuffer);
 
 					return 0;
 				}
 
-				snprintf(err, 256, "BASS Init failed, error code %d.\n", error);
-
-				err[255] = 0;
-				LUA->ThrowError(err);
+				snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, error code %d.\n", error);
+				LUA->ThrowError(g_pcErrorBuffer);
 
 				return 0;
 			}
 		}
 		catch(const overflow_error& e)
 		{
-			snprintf(err, 256, "BASS Init failed, exception error: %s\n", e.what());
+			snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, overflow_error exception: %s\n", e.what());
+			LUA->ThrowError(g_pcErrorBuffer);
 
-			err[255] = 0;
-			LUA->ThrowError(err);
 			return 0;
 		}
 		catch(const runtime_error& e)
 		{
-			snprintf(err, 256, "BASS Init failed, exception error: %s\n", e.what());
+			snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, runtime_error exception: %s\n", e.what());
+			LUA->ThrowError(g_pcErrorBuffer);
 
-			err[255] = 0;
-			LUA->ThrowError(err);
 			return 0;
 		}
 		catch(const exception& e)
 		{
-			snprintf(err, 256, "BASS Init failed, exception error: %s\n", e.what());
+			snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, exception: %s\n", e.what());
+			LUA->ThrowError(g_pcErrorBuffer);
 
-			err[255] = 0;
-			LUA->ThrowError(err);
 			return 0;
 		}
 		catch(string s)
 		{
-			snprintf(err, 256, "BASS Init failed, exception error: %s\n", s.c_str());
+			snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, exception: %s\n", s.c_str());
+			LUA->ThrowError(g_pcErrorBuffer);
 
-			err[255] = 0;
-			LUA->ThrowError(err);
 			return 0;
 		}
 		catch(char* s)
 		{
-			snprintf(err, 256, "BASS Init failed, exception error: %s\n", s);
+			snprintf(g_pcErrorBuffer, ERROR_PUFFER_SIZE, "BASS Init failed, exception: %s\n", s);
+			LUA->ThrowError(g_pcErrorBuffer);
 
-			err[255] = 0;
-			LUA->ThrowError(err);
 			return 0;
 		}
 		catch(...)
 		{
-			LUA->ThrowError("BASS Init failed, exception error: Unknown");
+			LUA->ThrowError("BASS Init failed, unknown exception.\n");
 			return 0;
 		}
 	}
@@ -239,8 +221,6 @@ GMOD_MODULE_CLOSE()
 		g_thCleanUp = NULL;
 	}
 
-	UTIL::ClearPendingChannels(LUA);
-
 	if(!ISNULLPTR(g_pListRunningThreads))
 	{
 		delete g_pListRunningThreads;
@@ -258,6 +238,14 @@ GMOD_MODULE_CLOSE()
 		delete [] g_pfFFTBuffer;
 		g_pfFFTBuffer = NULL;
 	}
+
+	if (!ISNULLPTR(g_pcErrorBuffer))
+	{
+		delete [] g_pcErrorBuffer;
+		g_pcErrorBuffer = NULL;
+	}
+
+	LUAINTERFACE::Dispose(LUA);
 
 #ifdef _WIN32
 	BASS_SetEAXParameters(EAX_PRESET_GENERIC);

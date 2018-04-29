@@ -1,8 +1,12 @@
-// Compiling with Source SDK 2013 for Linux/OSX? Don't forget this:
-#include "tchannel.h"
+#include "tchannel.hpp"
 
-#include "../bassfilesys.h"
-#include "../util.h"
+#include "../bassfilesys.hpp"
+#include "../util.hpp"
+
+string TChannel::LUAMETANAME = "IBASS3Channel";
+int TChannel::LUAMETAID = 0;
+map<unsigned long long, TChannel*> TChannel::g_mapObjectInstances = map<unsigned long long, TChannel*>();
+
 
 // +--------------------------------------------------+
 // |                    Friends                       |
@@ -20,67 +24,39 @@ void thfnSeekTo(TChannel* pChannel)
 	}
 }
 
-void CALLBACK fnVolumeBoostDSP(bass_dsp pDSP, bass_p pHandle, void *pBuffer, DWORD iLength, void *pUserData)
-{
-	if (ISNULLPTR(pUserData)) return;
-
-	TChannel* pChannal = (TChannel*) pUserData;
-
-	if (ISNULLPTR(pChannal)) return;
-	if (pHandle == BASS_NULL) return;
-	if (ISNULLPTR(pBuffer)) return;
-	if (!iLength) return;
-
-	if (pChannal->pVolumeBoostDSP != BASS_NULL) {
-		if (pDSP != pChannal->pVolumeBoostDSP) return;
-	}
-
-	float fVolumeBoost = pChannal->fVolumeBoost + 1;
-	pChannal->fVolumeBoostSet = pChannal->fVolumeBoost;
-	if (fVolumeBoost <= 1) return;
-
-	float* fdata = (float*) pBuffer;
-	if (ISNULLPTR(fdata)) return;
-
-	while (iLength > 0) {
-		*fdata *= fVolumeBoost;
-
-		iLength -= sizeof(float);
-		fdata += 1;
-	}
-}
-
-
 // +--------------------------------------------------+
 // |                 Private Methods                  |
 // +--------------------------------------------------+
 
 void TChannel::Init()
 {
+	lock_guard<mutex> Lock(MutexLock);
+	g_mapObjectInstances[id] = this;
+
 	pthSeeker = NULL;
 	sFilename = "";
 	iSeekingTo = 0;
 	fVolumeBoost = 0;
-	fVolumeBoostSet = 0;
-
-	iReferences = 0;
-	AddReference();
+	fVolume = 0;
 
 	bCanSeek = false;
 	bSeaking = false;
 
 	pHandle = BASS_NULL;
-	pVolumeBoostDSP = BASS_NULL;
 	bIsOnline = false;
+	bIsRemoved = true;
+
+	lsFX.clear();
 }
 
 bool TChannel::IsValidInternal()
 {
-	float dummy; // Isn't used.
-	if(pHandle == BASS_NULL) return false;
+	// Empty on propose channels are valid aswell.
+	if (bIsRemoved) return true;
 
-	// Returns false when the channel is a "BASS_ERROR_HANDLE".
-	return (BASS_ChannelGetAttribute(pHandle, BASS_ATTRIB_VOL, &dummy) == TRUE);
+	// Invalid if unexpectedly empty.
+	if (pHandle == BASS_NULL) return false;
+	return true;
 }
 
 bool TChannel::Is3DInternal()
@@ -110,7 +86,82 @@ void TChannel::RemoveInternal()
 
 	iSeekingTo = 0;
 	pthSeeker = NULL;
+	bIsRemoved = true;
 }
+
+void TChannel::ClearFxInternal()
+{
+	list<TEffect*>::iterator iter = lsFX.begin();
+
+	while (iter != lsFX.end())
+	{
+		TEffect* pFX = *iter;
+		if (ISNULLPTR(pFX))
+		{
+			iter++;
+			continue;
+		}
+
+		pFX->Remove();
+		UNREFDELETE(pFX);
+		iter++;
+	}
+
+	lsFX.clear();
+}
+
+void TChannel::ApplyFxInternal()
+{
+	list<TEffect*>::iterator iter = lsFX.begin();
+
+	while (iter != lsFX.end())
+	{
+		TEffect* pFX = *iter;
+		if (ISNULLPTR(pFX))
+		{
+			iter = lsFX.erase(iter);
+			continue;
+		}
+
+		if (pFX->IsRemoved())
+		{
+			iter = lsFX.erase(iter);
+			UNREFDELETE(pFX);
+			continue;
+		}
+
+		pFX->Apply(pHandle);
+		iter++;
+	}
+}
+
+void TChannel::UpdateFxInternal()
+{
+	if (!g_CLIENT) return;
+
+	list<TEffect*>::iterator iter = lsFX.begin();
+
+	while (iter != lsFX.end())
+	{
+		TEffect* pFX = *iter;
+		if (ISNULLPTR(pFX))
+		{
+			iter = lsFX.erase(iter);
+			continue;
+		}
+
+		if (pFX->IsRemoved())
+		{
+			iter = lsFX.erase(iter);
+			UNREFDELETE(pFX);
+			continue;
+		}
+
+		pFX->Update();
+		iter++;
+	}
+}
+
 
 void TChannel::Reset3D()
 {
@@ -198,7 +249,9 @@ int TChannel::LoadURL(string sURL, bass_flag eFlags)
 		pHandle = pLoadedHandle;
 		bIsOnline = true;
 		bCanSeek = true;
+		bIsRemoved = false;
 		Reset3D();
+		ApplyFxInternal();
 	}
 	else
 	{
@@ -244,7 +297,9 @@ int TChannel::LoadFile(string sURL, bass_flag eFlags)
 		pHandle = pLoadedHandle;
 		bIsOnline = false;
 		bCanSeek = true;
+		bIsRemoved = false;
 		Reset3D();
+		ApplyFxInternal();
 	}
 	else
 	{
@@ -283,6 +338,15 @@ TChannel::TChannel(string sURL, bool bIsOnline)
 
 TChannel::~TChannel()
 {
+	{ // Scope
+		lock_guard<mutex> Lock(MutexLock);
+		auto it = g_mapObjectInstances.find(id);
+		if (it != g_mapObjectInstances.end())
+		{
+			g_mapObjectInstances.erase(it);
+		}
+	}
+
 	Remove();
 }
 
@@ -299,6 +363,8 @@ void TChannel::Remove()
 
 	{ // Scope
 		lock_guard<mutex> Lock(MutexLock);
+		ClearFxInternal();
+
 		BASS_ChannelStop(pHandle);
 		BASS_MusicFree(pHandle);
 		BASS_StreamFree(pHandle);
@@ -322,6 +388,7 @@ void TChannel::Remove()
 		lock_guard<mutex> Lock(MutexLock);
 		iSeekingTo = 0;
 		pthSeeker = NULL;
+		bIsRemoved = true;
 	}
 }
 
@@ -338,23 +405,12 @@ bool TChannel::Update()
 	return Update(0);
 }
 
-string TChannel::ToString()
-{
-	return string(*this);
-}
-
-unsigned int TChannel::AddReference()
+void TChannel::Think()
 {
 	lock_guard<mutex> Lock(MutexLock);
-	iReferences++;
-	return iReferences;
+	if (!g_CLIENT) return;
 
-}
-unsigned int TChannel::RemoveReference()
-{
-	lock_guard<mutex> Lock(MutexLock);
-	if(iReferences) iReferences--;
-	return iReferences;
+	UpdateFxInternal();
 }
 
 int TChannel::Load(string sURL, bool bIsOnline, bass_flag eFlags)
@@ -423,6 +479,8 @@ void TChannel::SetVolume(float fVolume)
 	if (fVolume < 0) fVolume = 0; // No negatives
 	if (fVolume > 1000) fVolume = 1000;
 
+	this->fVolume = fVolume;
+
 	BASS_ChannelSlideAttribute(pHandle, BASS_ATTRIB_VOL, fVolume, 0);
 }
 
@@ -444,25 +502,17 @@ float TChannel::GetVolume()
 void TChannel::SetVolumeBoost(float fVolumeBoost)
 {
 	lock_guard<mutex> Lock(MutexLock);
+
 	if (!IsValidInternal()) return;
 	if (fVolumeBoost < 0) fVolumeBoost = 0; // No negatives
 	if (fVolumeBoost > 1000) fVolumeBoost = 1000;
 
+	float fVolume = this->fVolume;
 	this->fVolumeBoost = fVolumeBoost;
 
-	if (!fVolumeBoost) {
-		if (pVolumeBoostDSP == BASS_NULL) return;
+	SetVolume(fVolume * (1 + fVolumeBoost));
 
-		BASS_ChannelRemoveDSP(pHandle, pVolumeBoostDSP);
-		pVolumeBoostDSP = BASS_NULL;
-		fVolumeBoostSet = 0;
-		return;
-	}
-
-	if (pVolumeBoostDSP != BASS_NULL) return;
-
-	fVolumeBoostSet = 0;
-	pVolumeBoostDSP = BASS_ChannelSetDSP(pHandle, fnVolumeBoostDSP, this, -99999);
+	this->fVolume = fVolume;
 }
 
 float TChannel::GetVolumeBoost()
@@ -470,11 +520,7 @@ float TChannel::GetVolumeBoost()
 	lock_guard<mutex> Lock(MutexLock);
 	if (!IsValidInternal()) return 0;
 
-	if (pVolumeBoostDSP == BASS_NULL) {
-		return this->fVolumeBoost;
-	}
-
-	return fVolumeBoostSet;
+	return this->fVolumeBoost;
 }
 
 
@@ -989,6 +1035,64 @@ void TChannel::SetEAXMix(float fMix)
 	BASS_ChannelSetAttribute(pHandle, BASS_ATTRIB_EAXMIX, fMix);
 }
 
+bool TChannel::AddFx(TEffect* pFX)
+{
+	lock_guard<mutex> Lock(MutexLock);
+
+	if (!g_CLIENT) return false;
+	if (ISNULLPTR(pFX)) return false;
+
+	list<TEffect*>::iterator iter = lsFX.begin();
+
+	while (iter != lsFX.end())
+	{
+		TEffect* pFX = *iter;
+		if (ISNULLPTR(pFX))
+		{
+			iter = lsFX.erase(iter);
+			continue;
+		}
+
+		if (pFX->IsRemoved())
+		{
+			iter = lsFX.erase(iter);
+			UNREFDELETE(pFX);
+			continue;
+		}
+
+		iter++;
+	}
+
+	if (lsFX.size() >= BASS_MAX_FX) return false;
+
+	bool suggess = pFX->Apply(pHandle);
+
+	try
+	{
+		lsFX.push_back(pFX);
+	}
+	catch (...)
+	{
+		pFX->Remove();
+		return false;
+	}
+
+	return true;
+}
+
+void TChannel::ClearFx()
+{
+	lock_guard<mutex> Lock(MutexLock);
+	if (!g_CLIENT) return;
+
+	ClearFxInternal();
+}
+
+string TChannel::ToString()
+{
+	return string(*this);
+}
+
 TChannel::operator string()
 {
 	stringstream out;
@@ -1003,15 +1107,30 @@ TChannel::operator bass_p()
 	return GetBassHandle();
 }
 
+
+bool TChannel::operator ==(TChannel& other)
+{
+	return this->GetBassHandle() == other.GetBassHandle();
+}
+
+// +--------------------------------------------------+
+// |                    Friends                       |
+// +--------------------------------------------------+
 ostream& operator<<(ostream& os, TChannel& Channel)
 {
 	if (!Channel.IsValid())
 	{
-		os << "[NULL " << META_CHANNEL << "]";
+		os << "[NULL " << TChannel::LUAMETANAME << "]";
 		return os;
 	}
 
-	os << META_CHANNEL << ": " << &Channel << " ";
+	if (Channel.IsRemoved())
+	{
+		os << "[EMPTY " << TChannel::LUAMETANAME << "]";
+		return os;
+	}
+
+	os << TChannel::LUAMETANAME << ": " << &Channel << " ";
 	os << "[file:\"" << Channel.GetFileName() << "\"]";
 	os << "[online:" << (Channel.IsOnline() ? "true" : "false") << "]";
 	os << "[loop:" << (Channel.HasFlag(BASS_SAMPLE_LOOP) ? "true" : "false") << "]";
